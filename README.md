@@ -3,14 +3,8 @@ A MacroQuest macro to automate single pull (Generic or Specific Mob) OR location
 
 This macro will keep track and be able to pick up where you left off at any point if you /END and restart the macro. 
 
-Valid Starting Zones:
-Temple of Marrs
-Plane of Knowledge
-The Nexus
-Ruined City of Dranik
-
 InI File:
-MQ\Config\CataKill_[ToonName].ini
+MQ\Config\E3Hunter_[ToonName].ini
 
 InI Setings Explained:
 
