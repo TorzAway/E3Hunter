@@ -1,6 +1,6 @@
 |****************************************************************************************************************
 E3Hunter.mac - by Kroaking
-June 25th, 2024 - 05:03:00 PM
+June 25th, 2024 - 06:11:00 PM
 
 This will be updated after Rekka pushes Exposed E3 ini settings to E3Bots to be captured via mono queries.
 
@@ -41,9 +41,9 @@ Sub Main
 	/message ==================================================================
 	/message \at${MacroName}.mac \aw- \atv${version} \awby \ag Kroaking	
 	|------------------------------------------------------------------------------------------------------
-	/if (${HuntMethod.Equal[Loc]})  /message \at***\at \agHuntMethod: \ayis set to \at[\ay${HuntMethod}\at]\ar.
-	/if (${HuntMethod.Equal[All]})  /message \at***\at \agHuntMethod: \arHigh Risk PULLING: \ayis set to \at[\ag${HuntMethod}\at]\ar.
-	/if (${HuntMethod.Equal[Name]}) /message \at***\at \agHuntMethod: \arHigh Risk PULLING: \ayis set to \at[\ar${HuntMethod}\at]\ar.
+	/if (${HuntMethod.Equal[Loc]})  /message \at***\at \agHuntMethod: \ayis set to \at[\ag${HuntMethod}\at]\ar.
+	/if (${HuntMethod.Equal[All]})  /message \at***\at \agHuntMethod: \ayis set to \at[\ao${HuntMethod}\at]\ar.
+	/if (${HuntMethod.Equal[Name]}) /message \at***\at \agHuntMethod: \ayis set to \at[\ar${HuntMethod}\at]\ar.
 	|------------------------------------------------------------------------------------------------------	
 	/message ==================================================================	
 	/delay 3s
@@ -52,17 +52,15 @@ Sub Main
 	/call CheckThings
 	|----------------
 
-	/message ==================================================================
 	/message \ag- UseClickBuffs \ayis set to \at[\ag${UseClickBuffs}\at]\ax
 	/message \ag- UseClickDamage \ayis set to \at[\ag${UseClickDamage}\at]\ax
 	/message \ag- CheckBots \ayis set to \at[\ag${CheckBots}\at]\ax
 	/message \ag- DoBurns \ayis set to \at[\ag${DoBurns}\at]\ax
 	/message \ag- UseMq2Melee \ayis set to \at[\ag${UseMq2Melee}\at]\ax
-	/message \ag- RepeatMission \ayis set to \at[\ag${RepeatMission}\at]\ax
 	/message \ag- LootCorpse \ayis set to \at[\ag${LootCorpse}\at]\ax
 	/message \ag- LootMethod \ayis set to \at[\ag${LootMethod}\at]\ax
-	/message \ag- BRDTravelSongSlot \ayis set to \at[\ag${BRDTravelSongSlot}\at]\ax
-	/message \ag- BRDMelodyName \ayis set to \at[\ag${BRDMelodyName}\at]\ax
+	/message \ag- MinItemValue \ayis set to \at[\ag${MinItemValue}\at]\ax
+	/message \ag- ReclaimDC \ayis set to \at[\ag${ReclaimDC}\at]\ax		
 	
 	/if (${HuntMethod.Equal[Loc]})  {
 		/message ==================================================================
@@ -81,7 +79,7 @@ Sub Main
 	
 	
 	|-----------------------
-	/END
+	|/END
 	|-----------------------
 	
 	
@@ -95,8 +93,8 @@ Sub Main
 	| ENGINE SELECT -- START
 	|----------------------------
 	/message ==================================================================
-	/echo \at/CataKill \aw<\ar*\ao*\ay*\ag*\at*\au*\am*\ap*\aw> \ayABOUT TO: - \arSWARM PULL\ay . . . get ready! \aw<\ap*\am*\au*\at*\ag*\ay*\ao*\ar*\aw>
-	/popcustom 13 5 ---> ABOUT TO SWARM PULL . . . get ready! <---
+	/message \aw<\ar*\ao*\ay*\ag*\at*\au*\am*\ap*\aw> \ayABOUT TO PULL VIA METHOD: \at(\ar${HuntMethod}\at)\ay . . . get ready! \aw<\ap*\am*\au*\at*\ag*\ay*\ao*\ar*\aw>
+	/popcustom 13 5 ---> ABOUT TO PULL VIA METHOD: (${HuntMethod}) . . . get ready! <---
 	/message ==================================================================
 	/delay 3s
 	|-----------------------------------
@@ -200,16 +198,18 @@ Sub Declares
 
 	|** Start of E3Hunter.mac/PullFarm.mac type declares **|
 	/call CheckINI ${IniFileName} General Debugging bool FALSE
+	/call CheckINI ${IniFileName} General HuntMethod string Loc
 	/call CheckINI ${IniFileName} General AssistMe bool TRUE
 	/call CheckINI ${IniFileName} General CheckBots bool TRUE
 	/call CheckINI ${IniFileName} General DoBurns bool FALSE
-	/call CheckINI ${IniFileName} General SwarmPull bool FALSE
 	/call CheckINI ${IniFileName} General GroupNavToMe bool TRUE
 	/call CheckINI ${IniFileName} General UseClickBuffs bool FALSE
 	/call CheckINI ${IniFileName} General UseClickDamage bool FALSE
 	/call CheckINI ${IniFileName} General UseMq2Melee bool FALSE
 	/call CheckINI ${IniFileName} General LootCorpse bool FALSE
 	/call CheckINI ${IniFileName} General LootMethod string DCONLY
+	/call CheckINI ${IniFileName} General MinItemValue int 10
+	/call CheckINI ${IniFileName} General ReclaimDC bool FALSE
 	
 	/call CheckINI ${IniFileName} Camp RV_CampRadius int 2500
 	/call CheckINI ${IniFileName} Camp RV_ZRadius int 500
@@ -317,7 +317,6 @@ Sub CampInMarrs
 	/delay 3s
 	|------------------------
 	|--- Reset the Cycle Loop
-	/call IniChange "Theme" "CompletedPathTo" "FALSE"
 	/call ForceSpawnStepReset
 	|------------------------
 	/echo \arCAMPING TO DESKTOP !!!\ax
@@ -590,8 +589,12 @@ Sub DoSinglePull_Name(string Enemy)
 	|-----------------------------------------------
 	
 	|--- USE Hunter Array Setup to setup array for MOB1 Mob2.. etc
+	/echo USE Hunter Array Setup to setup array for MOB1 Mob2.. etc
+	/echo Call combat via /call combat
 	
 	|--- Call combat via /call combat
+	
+	/end
 	
 	|-----------------------------------------------
 	/if (${Debugging}) /echo DoSinglePull_Name Sub Exit
@@ -856,7 +859,7 @@ Sub LocPullStepMove(string LocPull_Step)
 	/declare SpawnsAtStep			int		local	NULL		
 	/varset CampReturnLoc	${Me.Y} ${Me.X} ${Me.Z}
 
-	/if (${Debugging}) /echo Sub SwarmPullStepMove_2 Entry
+	/if (${Debugging}) /echo Sub LocPullStepMove Entry
 	/if (${Debugging}) /echo LocPull_Step=(${LocPull_Step})
 
 	:MainLocLoopCycle
@@ -1016,7 +1019,7 @@ Sub LocPullStepMove(string LocPull_Step)
 	/goto :MainLocLoopCycle
 
 	|----------------------------------------------------------------------------------------------
-	/if (${Debugging}) /echo Sub SwarmPullStepMove_2 Exit
+	/if (${Debugging}) /echo Sub LocPullStepMove Exit
 /return
 | --------------------------------------------------------------------------------------------
 
@@ -1076,8 +1079,8 @@ Sub ForceSpawnStepReset
 	|----------------------------------------------------------
 	| -- Write STEP 1 to the ini file since we want to set our initial first step for that zone.
 	|------------------------------------------
-	/call IniChange "Theme" "LastSwarmed_Step" 1
-	/varset LastSwarmed_Step 1
+	/call IniChange "Zone" "LastLoc_Step" 1
+	/varset LastLoc_Step 1
 	/delay 20
 	|------------------------------------------
 
@@ -1097,14 +1100,14 @@ Sub DoLocPull
 |---------------------------------------------------------
 | Delete any EXISTING LocalStepArray
 |---------------------------------------------------------
-/if (${Defined[LocalStepArray_${Zone.ShortName}_2]}) {
-	/echo \arDeleting \atOLD \aydungeon array\ar \am[\atLocalStepArray_${Zone.ShortName}_2\am]\ax
-	/deletevar LocalStepArray_${Zone.ShortName}_2
+/if (${Defined[LocalStepArray_${Zone.ShortName}_1]}) {
+	/echo \arDeleting \atOLD \aydungeon array\ar \am[\atLocalStepArray_${Zone.ShortName}_1\am]\ax
+	/deletevar LocalStepArray_${Zone.ShortName}_1
 }
 |---------------------------------------------------------
 
 |------------------------1: 
-	/echo \atLoading steps for: \ay[Catacombs of Dranik (Caza)]\at.
+	/echo \atLoading steps for: \ay[${Zone.Name}]\at.
 	
 	
 	
@@ -1134,24 +1137,26 @@ Sub DoLocPull
 	/echo \ayCreating dynamic dungeon array.
 	/if (!${Defined[LocalStepArray_${Zone.ShortName}_1]}) {
 		/echo \ayCreating \am[\atLocalStepArray_${Zone.ShortName}_1[1,18]\am]\ax
-		/declare LocalStepArray_${Zone.ShortName}_2[1,18]	string	outer
+		
+		/declare LocalStepArray_${Zone.ShortName}_1[1,18]	string	outer
+		
 		/delay 10
 	}
 	|------------------------------------------------------
 
 	|---------------------------------- MAIN CYCLE BELOW
 	|---------------------------------- LEFT BOTTOM
-	/varset LocalStepArray_${Zone.ShortName}_1[1,1] 2016.83 451.40 -135.32
-	/varset LocalStepArray_${Zone.ShortName}_1[1,2] 2016.83 571.16 -135.32
-	/varset LocalStepArray_${Zone.ShortName}_1[1,3] 2016.83 711.16 -135.32
+	|/varset LocalStepArray_${Zone.ShortName}_1[1,1] 2016.83 451.40 -135.32
+	|/varset LocalStepArray_${Zone.ShortName}_1[1,2] 2016.83 571.16 -135.32
+	|/varset LocalStepArray_${Zone.ShortName}_1[1,3] 2016.83 711.16 -135.32
 	|---------------------------------- LEFT BOTTOM
 
 	|---------------------------------- MAIN CYCLE ABOVE
 
 	|------------------------------------------------------
-	/echo \ayStep \am[\ag1\am]\ay set to \am[\ag${LocalStepArray_${Zone.ShortName}_1[1,1]}\am]\ay
-	/echo \ayStep \am[\ag2\am]\ay set to \am[\ag${LocalStepArray_${Zone.ShortName}_1[1,2]}\am]\ay
-	/echo \ayStep \am[\ag2\am]\ay set to \am[\ag${LocalStepArray_${Zone.ShortName}_1[1,3]}\am]\ay
+	|/echo \ayStep \am[\ag1\am]\ay set to \am[\ag${LocalStepArray_${Zone.ShortName}_1[1,1]}\am]\ay
+	|/echo \ayStep \am[\ag2\am]\ay set to \am[\ag${LocalStepArray_${Zone.ShortName}_1[1,2]}\am]\ay
+	|/echo \ayStep \am[\ag2\am]\ay set to \am[\ag${LocalStepArray_${Zone.ShortName}_1[1,3]}\am]\ay
 
 	/message ==================================================================
 	
@@ -1185,6 +1190,10 @@ Sub DoLocPull
 	|------------
  }
 |------------------------1: 
+
+
+/end
+
 
 /if (${Debugging}) /echo Sub DoLocPull Exit
 /return
