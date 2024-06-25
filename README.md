@@ -30,9 +30,11 @@ UseMq2Melee=FALSE - (Turn to TRUE to Enable MQ2Melee plugin / FALSE to Disable M
 ---
 LootCorpse=TRUE - (Turn to TRUE to Loot corpses)
 ---
-ReclaimDC=FALSE - (Turn to TRUE to reclaim Diamond Coin)
----
 LootMethod=DCONLY - (OPTIONS: DCONLY to loot Diamond COin and HIGH VALUE stackable items / E3 to have E# system handle all looting)
+---
+MinItemValue - (What is the minumum valuie in plat an item should sell for to loot it?)
+---
+ReclaimDC=FALSE - (Turn to TRUE to reclaim Diamond Coin)
 ---
 ---
 [Camp]
