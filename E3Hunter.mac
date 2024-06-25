@@ -1,6 +1,6 @@
 |****************************************************************************************************************
 E3Hunter.mac - by Kroaking
-June 25th, 2024 - 04:42:00 PM
+June 25th, 2024 - 05:03:00 PM
 
 This will be updated after Rekka pushes Exposed E3 ini settings to E3Bots to be captured via mono queries.
 
@@ -212,8 +212,7 @@ Sub Declares
 	/call CheckINI ${IniFileName} General LootMethod string DCONLY
 	
 	/call CheckINI ${IniFileName} Camp RV_CampRadius int 2500
-	/call CheckINI ${IniFileName} Camp RV_MaxRadius int 500
-	/call CheckINI ${IniFileName} Camp ZRadius int 500
+	/call CheckINI ${IniFileName} Camp RV_ZRadius int 500
 	/call CheckINI ${IniFileName} Camp RV_GetMobAtFullHealth int 0
 	/call CheckINI ${IniFileName} Camp RV_Range int 10
 	/call CheckINI ${IniFileName} Camp RV_MinZRange int -50
@@ -606,7 +605,7 @@ Sub TargetShortest
 	/if (${Debugging}) /echo Sub TargetShortest Entry
 
 	/if (${UseClickBuffs}) /call Clickies_Buffs
-	/declare MobsInRadius 	int 	local 	${SpawnCount[npc noalert 1 targetable radius ${CampRadius} zradius ${ZRadius} alert 10]}
+	/declare MobsInRadius 	int 	local 	${SpawnCount[npc noalert 1 targetable radius ${RV_CampRadius} zradius ${RV_ZRadius} alert 10]}
 
 
 	|- Makes scanning in big zones super efficient.
@@ -625,7 +624,7 @@ Sub TargetShortest
 	/varset myTargetID 0
 	/if (${MobsInRadius}) {
 		/for MobCounter 1 to ${MobsInRadius}
-		/varset MobID ${NearestSpawn[${MobCounter},npc targetable radius ${CampRadius} zradius ${ZRadius} alert 10 noalert 1].ID}
+		/varset MobID ${NearestSpawn[${MobCounter},npc targetable radius ${RV_CampRadius} zradius ${RV_ZRadius} alert 10 noalert 1].ID}
 
 		|-- ORIGINAL LIST TO FILTER
 		|/if (${Select[${Spawn[ID ${MobID}].Type},PET,AURA,BANNER,CAMPFIRE,CORPSE,CHEST,ITEM,TRIGGER,TRAP,TIMER,MOUNT,MERCENARY,OBJECT]} && !${Ini[${MobIgnore},${Zone.ShortName},Ignored].Find[ID ${MobID}]}) /continue
@@ -960,7 +959,7 @@ Sub LocPullStepMove(string LocPull_Step)
 			}
 			|-----------------------------------------------------------------------------------------------------------------------------
 			|---------------------------------------------------------------
-			| Use the DoClearTargets for SPawnPull system instead, of COMBAT
+			| Use the DoClearTargets for LocPullStepMove system instead, of COMBAT
 			|---------------------------------------------------------------
 			/if (${Me.XTarget[1].ID}) /call DoClearTargets
 			/doevents
