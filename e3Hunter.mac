@@ -1,6 +1,6 @@
 |****************************************************************************************************************
 E3Hunter.mac - by Kroaking
-June 26th, 2024 - 04:04:00 PM
+June 26th, 2024 - 04:27:00 PM
 
 This will be updated after Rekka pushes Exposed E3 ini settings to E3Bots to be captured via mono queries.
 
@@ -78,11 +78,6 @@ Sub Main
 	|--------------
 	
 	
-	|-----------------------
-	|/END
-	|-----------------------
-	
-	
 	| --- MAIN ------------------------------------------------------------------------------
 	:mainloop
 	|/echo START MAINLOOP
@@ -104,7 +99,7 @@ Sub Main
 	|----------------------------
 	| ENGINE SELECT -- START
 	|----------------------------
-	|/delay 5s
+	/delay 5s
 	|-------------------------While Not Dead 
 	/while (!${Me.State.Equal[DEAD]} && (${Zone.ID}==${startZone})) {
 		|-----------------------------------------------
@@ -147,7 +142,7 @@ Sub Declares
 
 	|==================== DO NOT ALTER THESE VALUES ====================
 	/declare MacroName			string	outer	E3Hunter
-	/declare version			string	outer	1.0.1
+	/declare version			string	outer	1.0.2
 	/declare IniFileName		string	outer	${MacroName}_${Me.CleanName}.ini
 	/declare ZoneDataFileName	string	outer	${MacroName}_ZoneData.ini
 	/declare FirstRun			int		outer	0
@@ -171,6 +166,7 @@ Sub Declares
 	/declare SitDelay 			timer 	outer 5s
 	/declare Endmac 			bool 	outer FALSE
 	/declare BagsAreFull		bool 	outer FALSE
+	/declare SpawnWaitTime		int		outer 60
 
 	|** SPECIFIC of E3Hunter.mac/SwarmPull declares **|
 	|----------------------------------------------------------
@@ -898,17 +894,17 @@ Sub DoSinglePull_Name(string Enemy)
 	|------------------------------------------------
 	|--- Remove any comma from the zone name ----
 	|------------------------------------------------
-	/echo \agORIGINAL ZONE NAME\ao=\am(\at${ValidZoneName}\am)\ax
+	/echo \ag - ORIGINAL ZONE NAME\ao=\am(\at${ValidZoneName}\am)\ax
 	/if (${ValidZoneName.Find[,]}) {
 		|/echo ${ValidZoneName} \arhas\ax a COMMA in it !
 		|/echo \arNeed to Modify Zone Name.\ax
 		|/echo CutPart 1=(${Zone.Name.Arg[1,,]})
 		|/echo CutPart 2=(${Zone.Name.Arg[2,,]})
-		/echo \agMODIFIED\ay=\am(\at${Zone.Name.Arg[1,,]} ${Zone.Name.Arg[2,,]}\am)\ax
+		/echo \ag - MODIFIED\ay=\am(\at${Zone.Name.Arg[1,,]} ${Zone.Name.Arg[2,,]}\am)\ax
 		/varset ValidZoneName ${Zone.Name.Arg[1,,]} ${Zone.Name.Arg[2,,]}
 	} else {
-		/echo \at${ValidZoneName}\ax \agdoes NOT have\ax a COMMA in it !\ax
-		/echo \atNo need to Modify Zone Name.\ax
+		/echo \at - ${ValidZoneName}\ax \agdoes NOT have\ax a COMMA in it !\ax
+		/echo \at - No need to Modify Zone Name.\ax
 	}
 	/echo \agFinal ZONE NAME\ao=\am(\at${ValidZoneName}\am)\ax
 	|------------------------------------------------
@@ -1244,7 +1240,36 @@ Sub ReturnToCamp
 	/if (${Me.Moving}) /delay 5
 	/if (${Me.Moving}) /goto :WaitTillAtCamp
 	
+	/call WaitForSpawns
+	
 	/if (${Debugging}) /echo Sub ReturnToCamp Exit
+/return
+| --------------------------------------------------------------------------------------------
+
+| --------------------------------------------------------------------------------------------
+| SUB: WaitForSpawns     ( Always Call This to pick up From LastLoc_Step )
+| --------------------------------------------------------------------------------------------
+Sub WaitForSpawns
+	/if (${Debugging}) /echo Sub WaitForSpawns Enter
+	
+	/message ==================================================================
+	/message \ag+++\ax \aoWaiting \ar${SpawnWaitTime}s\ax \aofor re-spawns.\ax
+	/message ==================================================================
+
+	|-----------------------------------------------
+	/while (!${Me.Combat} && !${Me.XTarget[1].ID}) {
+		|--------------------------------------------
+		/if (!${Me.Combat} && !${Me.XTarget[1].ID}) {
+			/delay ${SpawnWaitTime}s
+		} else {
+			/call DoClearTargets
+			/return
+		}
+		|--------------------------------------------
+	
+	|-----------------------------------------------}
+	
+	/if (${Debugging}) /echo Sub WaitForSpawns Exit
 /return
 | --------------------------------------------------------------------------------------------
 
@@ -1326,17 +1351,17 @@ Sub DoLocPull
 	|------------------------------------------------
 	|--- Remove any comma from the zone name ----
 	|------------------------------------------------
-	/echo \agORIGINAL ZONE NAME\ao=\am(\at${ValidZoneName}\am)\ax
+	/echo \ag - ORIGINAL ZONE NAME\ao=\am(\at${ValidZoneName}\am)\ax
 	/if (${ValidZoneName.Find[,]}) {
 		|/echo ${ValidZoneName} \arhas\ax a COMMA in it !
 		|/echo \arNeed to Modify Zone Name.\ax
 		|/echo CutPart 1=(${Zone.Name.Arg[1,,]})
 		|/echo CutPart 2=(${Zone.Name.Arg[2,,]})
-		/echo \agMODIFIED\ay=\am(\at${Zone.Name.Arg[1,,]} ${Zone.Name.Arg[2,,]}\am)\ax
+		/echo \ag - MODIFIED\ay=\am(\at${Zone.Name.Arg[1,,]} ${Zone.Name.Arg[2,,]}\am)\ax
 		/varset ValidZoneName ${Zone.Name.Arg[1,,]} ${Zone.Name.Arg[2,,]}
 	} else {
-		/echo \at${ValidZoneName}\ax \agdoes NOT have\ax a COMMA in it !\ax
-		/echo \atNo need to Modify Zone Name.\ax
+		/echo \at - ${ValidZoneName}\ax \agdoes NOT have\ax a COMMA in it !\ax
+		/echo \at - No need to Modify Zone Name.\ax
 	}
 	/echo \agFinal ZONE NAME\ao=\am(\at${ValidZoneName}\am)\ax
 	|------------------------------------------------
