@@ -1,6 +1,6 @@
 |****************************************************************************************************************
 E3Hunter.mac - by Kroaking
-June 25th, 2024 - 06:11:00 PM
+June 26th, 2024 - 03:49:00 PM
 
 This will be updated after Rekka pushes Exposed E3 ini settings to E3Bots to be captured via mono queries.
 
@@ -86,31 +86,39 @@ Sub Main
 	| --- MAIN ------------------------------------------------------------------------------
 	:mainloop
 	|/echo START MAINLOOP
-	|--------------------------------------------
 	/if (${Me.XTarget[1].ID}) /call DoClearTargets
-		
-	|----------------------------
-	| ENGINE SELECT -- START
-	|----------------------------
+	
 	/message ==================================================================
 	/message \aw<\ar*\ao*\ay*\ag*\at*\au*\am*\ap*\aw> \ayABOUT TO PULL VIA METHOD: \at(\ar${HuntMethod}\at)\ay . . . get ready! \aw<\ap*\am*\au*\at*\ag*\ay*\ao*\ar*\aw>
 	/popcustom 13 5 ---> ABOUT TO PULL VIA METHOD: (${HuntMethod}) . . . get ready! <---
+	
+	|----------------------------------------------
+	|--- Set My CampLoc
+	|----------------------------------------------
+	/varset CampReturnLoc	${Me.Y} ${Me.X} ${Me.Z}
+	/message                 \agSetting Camp Location to: \am(\arY\ao:\at${Me.Y} \arX\ao:\at${Me.X} \arZ\ao:\at${Me.Z}\am)\ax
 	/message ==================================================================
 	/delay 3s
-	|-----------------------------------
-	| -- Call check mission zone.
-	|-----------------------------------
-	|-------------------------While Not Dead
-	/while (!${Me.State.Equal[DEAD]}) {
-		/if (${LootCorpse} && !${Me.XTarget[1].ID}) /call CheckForCorpses			
-			
-		|------------------------------------------
-		/if (${HuntMethod.Equal[Loc]})  /call DoLocPull
-		/if (${HuntMethod.Equal[All]})  /call DoSinglePull_Any
-		/if (${HuntMethod.Equal[Name]}) /call DoSinglePull_Name
-		|------------------------------------------
-			
-		/if (${Me.XTarget[1].ID}) /call DoClearTargets
+	|----------------------------------------------
+	
+	|----------------------------
+	| ENGINE SELECT -- START
+	|----------------------------
+	|/delay 5s
+	|-------------------------While Not Dead 
+	/while (!${Me.State.Equal[DEAD]} && (${Zone.ID}==${startZone})) {
+		|-----------------------------------------------
+		| Before we single pull ...   Check if we should loot Corpses.
+		|-----------------------------------------------
+		/if (${LootCorpse} && !${Me.XTarget[1].ID}) /call CheckForCorpses
+		|-----------------------------------------------
+		/if (${HuntMethod.Equal[LOC]}) /call DoLocPull
+		/if (${HuntMethod.Equal[ANY]}) {
+			/varset PullRange ${CampRadius}
+			/call DoSinglePull_Any
+		}
+		/if (${HuntMethod.Equal[NAME]}) /call DoSinglePull_Name		
+		/if (${Me.XTarget[1].ID}) /Call DoClearTargets
 		/call GMCheck
 		/doevents
 	}
@@ -141,6 +149,7 @@ Sub Declares
 	/declare MacroName			string	outer	E3Hunter
 	/declare version			string	outer	1.0.0
 	/declare IniFileName		string	outer	${MacroName}_${Me.CleanName}.ini
+	/declare ZoneDataFileName	string	outer	${MacroName}_ZoneData.ini
 	/declare FirstRun			int		outer	0
 
 	|--------------------------------------
@@ -152,6 +161,7 @@ Sub Declares
 	/declare myTargetID 		int 	outer 0
 	/declare reportTarget 		timer 	outer 5s
 	/declare startZone 			int 	outer ${Zone.ID}
+	/declare ValidZoneName 		string 	outer ${Zone.Name}
 	/declare courseCorrection 	timer 	outer 1s
 	/declare CampY 				int 	outer ${Me.Y}
 	/declare CampX 				int 	outer ${Me.X}
@@ -240,7 +250,53 @@ Sub Declares
 	/call CheckIni ${IniFileName} Zone LastLoc_Zone string NONE
 	/call CheckIni ${IniFileName} Zone LastLoc_Step string 1
 
-	|** End of E3Hunter.mac/PullFarm.mac type declares **|
+	|** End of E3Hunter.mac/PullFarm.mac type declares **|	
+	
+	|==================== DO NOT ALTER THESE VALUES ====================
+	|------------------------------------------------------------
+	|Variables that you don't need to worry about.
+	|------------------------------------------------------------
+	/declare RV_FailCounter      			int outer  0
+	/declare RV_MyTargetID       			int outer  0
+	/declare RV_MyTargetName     			string outer
+	/declare RV_MyTargetDead     			int outer  0
+	/declare RV_InvalidTargetID  			int outer  0
+	/declare RV_HasTarget        			int outer  0
+	/declare RV_RandomWait       			int outer  0
+	/declare RV_LootSlot         			int outer  0
+	/declare RV_CheckLook        			int outer  0
+	/declare RV_Fighting         			int outer  0
+	/declare RV_TargetDead       			int outer  0
+	/declare RV_MyXLOC           			int outer  0
+	/declare RV_MyYLOC           			int outer  0
+	/declare RV_FastRange        			int outer
+	/declare RV_RangeMax         			int outer
+	/declare RV_RangeMin         			int outer
+	/varcalc RV_FastRange ${RV_Range}+3
+	/varcalc RV_RangeMax ${RV_Range}+1
+	/varcalc RV_RangeMin ${RV_Range}-1   
+	
+	|------------------------------------------------------------  
+	/declare RV_MaxRadius_Param0	int outer  
+	/if (${Param0}) /varset RV_MaxRadius_Param0 ${Param0}   
+	|------------------------------------------------------------  
+	
+	/declare anchorY  			int  	outer ${Me.Y}
+	/declare anchorX  			int  	outer ${Me.X}
+	/declare MyHeading	        int    	outer ${Me.Heading.DegreesCCW}
+	/declare StartZoneFullName	string 	outer ${Zone.Name}
+	/declare MyClassType 		string 	outer
+	/declare MyClassTypePet 	int    	outer 0
+	/declare ItemTo 			string 	outer
+	/declare StartingPlat 		int    	outer ${Me.Platinum}
+	/declare PlatSession 		int    	outer 0  
+	
+	|------------------------------------------------------------ 
+	/declare InAGroup 			bool   	outer 0 FALSE
+	/declare E3Detected			string 	outer NULL
+	|------------------------------------------------------------   
+	|==================== DO NOT ALTER THESE VALUES ====================
+	
 	|-------------------------------
 	/if (${FirstRun}) {
 		/echo \ayCreated INI file \am[\at${IniFileName}\am]\ay with default values.\ax
@@ -479,9 +535,7 @@ Sub DoSinglePull_Any(string Enemy)
 	|-------------------------
 	/call CheckCasting
 	|-------------------------
-	/varset CampX ${Me.X}
-	/varset CampY ${Me.Y}
-	/varset CampZ ${Me.Z}
+	
 	/if (${Bool[${Enemy}]}) {
 		/varset FarmMob ${Enemy}
 		/if (${Debugging} && !${reportTarget}) {
@@ -582,26 +636,6 @@ Sub DoSinglePull_Any(string Enemy)
 | --------------------------------------------------------------------------------------------
 
 | --------------------------------------------------------------------------------------------
-| SUB: DoSinglePull_Name
-| --------------------------------------------------------------------------------------------
-Sub DoSinglePull_Name(string Enemy)
-	/if (${Debugging}) /echo DoSinglePull_Name Sub Entry
-	|-----------------------------------------------
-	
-	|--- USE Hunter Array Setup to setup array for MOB1 Mob2.. etc
-	/echo USE Hunter Array Setup to setup array for MOB1 Mob2.. etc
-	/echo Call combat via /call combat
-	
-	|--- Call combat via /call combat
-	
-	/end
-	
-	|-----------------------------------------------
-	/if (${Debugging}) /echo DoSinglePull_Name Sub Exit
-/return
-| --------------------------------------------------------------------------------------------
-
-| --------------------------------------------------------------------------------------------
 | SUB: TargetShortest
 | --------------------------------------------------------------------------------------------
 Sub TargetShortest
@@ -668,7 +702,8 @@ Sub TargetShortest
 		/varset myTargetID 0
 		/delay 5s ${Me.XTarget} == 0
 		/if (!${Me.XTarget}) {
-			/if (!${Announce}) {
+			/if (!${Announce}) {				
+				/if (!${Me.XTarget}) /call ReturnToCamp
 				/message No more mobs to pull, lets Wait for Respawn!
 				/varset Announce TRUE
 			}
@@ -682,12 +717,18 @@ Sub TargetShortest
 	/varcalc BackUpTimer (${BackUpTimer})+1
 	/if (${Debugging}) /echo Setting BackUpTimer +1 to ${BackUpTimer}
 	/if (${Debugging} && ${BackUpTimer}>1) /echo \arCould Be Stuck ${BackUpTimer}
+	|------------------------
 	/if (${BackUpTimer}>10) {
-	/echo \ayHaving trouble getting to a target.. Attempting to get back on mesh.
-	/if (${Debugging}) /echo Setting BackUpTimer Plus 1
-	/call BackUp
-	/varset BackUpTimer 0
+		/if (!${Me.XTarget}) /call ReturnToCamp
+		/delay 1s
+		/echo \ayHaving trouble getting to a target.. Attempting to get back on mesh.
+		/if (${Debugging}) /echo Setting BackUpTimer Plus 1
+		/call BackUp
+		/delay 1s
+		/varset BackUpTimer 0
 	}
+	|------------------------
+	
 	/if (${Debugging}) /echo Sub TargetShortest Exit
 /return
 | --------------------------------------------------------------------------------------------
@@ -847,6 +888,177 @@ Sub Combat
 /return
 | --------------------------------------------------------------------------------------------
 
+| --------------------------------------------------------------------------------------------
+| SUB: DoSinglePull_Name
+| --------------------------------------------------------------------------------------------------
+Sub DoSinglePull_Name(string Enemy)
+	/if (${Debugging}) /echo DoSinglePull_Name Sub Entry
+	|-----------------------------------------------
+	
+	|------------------------------------------------
+	|--- Remove any comma from the zone name ----
+	|------------------------------------------------
+	/echo \agORIGINAL ZONE NAME\ao=\am(\at${ValidZoneName}\am)\ax
+	/if (${ValidZoneName.Find[,]}) {
+		|/echo ${ValidZoneName} \arhas\ax a COMMA in it !
+		|/echo \arNeed to Modify Zone Name.\ax
+		|/echo CutPart 1=(${Zone.Name.Arg[1,,]})
+		|/echo CutPart 2=(${Zone.Name.Arg[2,,]})
+		/echo \agMODIFIED\ay=\am(\at${Zone.Name.Arg[1,,]} ${Zone.Name.Arg[2,,]}\am)\ax
+		/varset ValidZoneName ${Zone.Name.Arg[1,,]} ${Zone.Name.Arg[2,,]}
+	} else {
+		/echo \at${ValidZoneName}\ax \agdoes NOT have\ax a COMMA in it !\ax
+		/echo \atNo need to Modify Zone Name.\ax
+	}
+	/echo \agFinal ZONE NAME\ao=\am(\at${ValidZoneName}\am)\ax
+	|------------------------------------------------
+	|--- Remove any comma from the zone longname ----
+	|------------------------------------------------
+	
+	|------------------------------------------------------------
+	|Mob Array Information.
+	|------------------------------------------------------------
+	/call ReadINIFile ${ZoneDataFileName} "${ValidZoneName} - (Mob)" Mob
+	/if (!${Defined[RV_MobArray]}) {
+		/echo Mob Array Creation Error, ending macro...
+		/endmacro
+	}
+	|------------------------------------------------------------
+	
+	
+	
+	
+	
+	
+	:MainLocLoopCycle_Mob
+	/delay 1s
+	/message ==================================================================
+	/message \ag+++\ax \ayStarting \ar${HuntMethod} \agCycle:\ax \ao...\ax \arLets go !\ax
+	/message ==================================================================
+	/delay 3s
+	
+	
+	|--------------------
+	
+	|--- MAIN CODE HERE FOR NAMED MOB TARTETING
+	
+	|--------------------
+	
+	
+	
+	
+	
+	|---------------		
+	|-- MOVE TO CAMP
+	|---------------
+	/call ReturnToCamp
+	/delay 5
+	
+	|----------------------------------------------------------------
+	|-- Clear the camp location of any corpses before the next cycle.
+	|----------------------------------------------------------------
+	/if (${LootCorpse} && !${Me.XTarget[1].ID}) /call CheckForCorpses
+	|----------------------------------------------------------------
+
+	|------------------
+	/if (${ReclaimDC}) /call ReclaimAltDC
+	|------------------
+
+	|------------------------------------------
+	/if (!${Me.XTarget[1].ID} && ${CheckBots}) {
+		/call GroupDeathChk
+		/call GroupManaChk
+		/call GroupEndChk
+	}
+	|------------------------------------------
+
+	/message ==================================================================
+	/message \ag+++\ax \aoCompleted \ar${HuntMethod} \agCycle:\ax \ao...\ax \agLets do it again !!!\ax
+	/message ==================================================================
+	/delay 3s
+	|------------------------
+	/call ForceSpawnStepReset
+	/call Go2LastSwarmLoc
+	|------------------------
+
+	/goto :MainLocLoopCycle_Mob
+	
+	|-----------------------------------------------
+	/if (${Debugging}) /echo DoSinglePull_Name Sub Exit
+/return
+| --------------------------------------------------------------------------------------------------
+
+| --------------------------------------------------------------------------------------------------
+|SUB: Reading from an INI File
+| --------------------------------------------------------------------------------------------------
+  Sub ReadINIfile(FileName,SectionName,ArrayType)
+  
+  /echo \ayAttempting to Read Section \ag"${SectionName}"\ay Zone Information from \at${FileName}\ay...
+  /delay 1s
+  |------------------------------------------------------
+  /if (!${Ini[${FileName},${SectionName}].Length}) {
+    /echo "${SectionName}" is not a Valid Section for FILE:${FileName}, ending macro...
+    /delay 1s
+    /return
+  }
+  |------------------------------------------------------
+
+  /declare nValues     int local  1
+  /declare nArray      int local  0
+  /declare KeySet      string local  ${Ini[${FileName},${SectionName}]}
+  /declare TempMobArrayVal string local null
+  /declare TempLocArrayVal string local null
+
+:CounterLoop
+  /if (!${KeySet.Arg[${nValues},|].Length}) {
+    /varcalc nValues ${nValues}-1
+    /goto :MakeArray
+  }
+  /varcalc nValues ${nValues}+1
+  /goto :CounterLoop
+
+:MakeArray
+  /if (!${nValues}) /return
+  |------------------------------------------------------------------------------------------
+  /if (${ArrayType.Equal[Mob]} && ${FileName.Equal["${ZoneDataFileName}"]} && ${nValues}>0) {
+    /echo \ayDeclaring Mob Array...
+    /declare RV_MobArray[${nValues}]   string outer
+	/declare RV_MobStats[${nValues}]   string outer
+	/message ==================================================================
+	/for nArray 1 to ${nValues}
+		/if (${FileName.Equal["${ZoneDataFileName}"]}) {
+			/varset TempMobArrayVal ${Ini[${FileName},${SectionName},${ArrayType}${nArray}]}
+			/if (!${TempMobArrayVal.Equal[NULL]}) /varset RV_MobArray[${nArray}] ${Ini[${FileName},${SectionName},${ArrayType}${nArray}]}
+			/if (!${TempMobArrayVal.Equal[NULL]}) /message \atRV_MobArray[${nArray}]\ax \ay${Ini[${FileName},${SectionName},${ArrayType}${nArray}]}\ax
+			/varset RV_MobStats[${nArray}] 0
+		}	
+	/next nArray
+	/message ==================================================================		
+  }
+  |------------------------------------------------------------------------------------------
+  
+  |------------------------------------------------------------------------------------------
+  /if (${ArrayType.Equal[Loc]} && ${FileName.Equal["${ZoneDataFileName}"]} && ${nValues}>0) {
+    /echo \ayDeclaring Loc Array...
+    /declare RV_LocArray[${nValues}]   string outer
+	/message ==================================================================
+	/for nArray 1 to ${nValues}
+		/if (${FileName.Equal["${ZoneDataFileName}"]}) {
+			/varset TempLocArrayVal ${Ini[${FileName},${SectionName},${ArrayType}${nArray}]}
+			/if (!${TempLocArrayVal.Equal[NULL]}) /varset RV_LocArray[${nArray}] ${Ini[${FileName},${SectionName},${ArrayType}${nArray}]}
+			/if (!${TempLocArrayVal.Equal[NULL]}) /message \atRV_LocArray[${nArray}]\ax \ay${Ini[${FileName},${SectionName},${ArrayType}${nArray}]}\ax
+		}	
+	/next nArray
+	/message ==================================================================	
+  }
+  |------------------------------------------------------------------------------------------
+  
+  /echo "${SectionName}" Zone Information Read Successfully from ${FileName}...
+  /delay 5
+
+  /return
+| --------------------------------------------------------------------------------------------------
+
 | --------------------------------------------------------------------------------------------------
 | SUB: LocPullStepMove   Receive: SpawnPull_Step from Go2LastSwarmLoc
 | --------------------------------------------------------------------------------------------------
@@ -857,20 +1069,20 @@ Sub LocPullStepMove(string LocPull_Step)
 	/declare mNavLocY				int		local	NULL
 	/declare mNavLocX				int		local	NULL
 	/declare SpawnsAtStep			int		local	NULL		
-	/varset CampReturnLoc	${Me.Y} ${Me.X} ${Me.Z}
-
+	
 	/if (${Debugging}) /echo Sub LocPullStepMove Entry
 	/if (${Debugging}) /echo LocPull_Step=(${LocPull_Step})
 
-	:MainLocLoopCycle
+	:MainLocLoopCycle_Loc
 	/delay 1s
 	/message ==================================================================
-	/message \ag+++\ax \ayStarting \arLocation Pull \agCycle:\ax \ao...\ax \arLets go !\ax
+	/message \ag+++\ax \ayStarting \ar${HuntMethod} \agCycle:\ax \ao...\ax \arLets go !\ax
 	/message ==================================================================
 	/delay 3s
 	|-------------------------------------------------------------------------------------------------------
-    /for x ${LocPull_Step} to ${LocalStepArray_${Zone.ShortName}_1.Size}
-		/varset TempSpawnPull_Loc ${LocalStepArray_${Zone.ShortName}_1[1,${x}]}
+    /for x ${LocPull_Step} to ${RV_LocArray.Size}
+		/varset TempSpawnPull_Loc ${RV_LocArray[${x}]}
+		|/echo {TempSpawnPull_Loc}=${TempSpawnPull_Loc} | {TempSpawnPull_Loc.Length}=${TempSpawnPull_Loc.Length}
 		|-----------------------------
 		/if (${TempSpawnPull_Loc.Equal[NULL]}) {
 			/echo \ar The location steps did not load correctly, reloading !
@@ -889,7 +1101,7 @@ Sub LocPullStepMove(string LocPull_Step)
             /varset mStrLoc (${mNavLocX} ${mNavLocY})
         }
 		 |-------------------------
-		/varset SpawnsAtStep ${SpawnCount[npc loc ${mNavLocX} ${mNavLocY} radius 100]}
+		/varset SpawnsAtStep ${SpawnCount[npc loc ${mNavLocX} ${mNavLocY} radius 35]}
 		|/echo SpawnsAtStep=(${SpawnsAtStep})
 		|/echo  mStrLoc=(${mStrLoc}) | mNavLocY=(${mNavLocY}) | mNavLocYX(${mNavLocX})
 		|------------------------------------------
@@ -917,11 +1129,12 @@ Sub LocPullStepMove(string LocPull_Step)
 		|-----------------------------------------------
 		|/echo \arSwarmPullStepMove: \ayTempSpawnPull_Loc=(${TempSpawnPull_Loc})
 		|-----------------------------------------------
+		
 		/if (${TempSpawnPull_Loc.Length}>0) {
-			/echo \agNext location to Nav to is: \aySTEP: \ay[\am${x}\ay] of \ay[\am${LocalStepArray_${Zone.ShortName}_1.Size}\ay] Coordinates: [\am${TempSpawnPull_Loc}\ay]
+			/echo \agNext location to Nav to is: \aySTEP: \ay[\am${x}\ay] of \ay[\am${RV_LocArray.Size}\ay] Coordinates: [\am${TempSpawnPull_Loc}\ay]
 			|-----------------------------------------------------------------------------------------------------------------------------
 			/if (${SpawnsAtStep}>=1) {
-				/echo  \ao - STEP: \ay[\am${x}\ay] of \ay[\am${LocalStepArray_${Zone.ShortName}_1.Size}\ay] has [\at${SpawnsAtStep}\ay] spawns, \agKILL THEM ALL\ax \ao!!!\ax
+				/echo  \ao - STEP: \ay[\am${x}\ay] of \ay[\am${RV_LocArray.Size}\ay] has [\at${SpawnsAtStep}\ay] spawns, \agKILL THEM ALL\ax \ao!!!\ax
 				|--------------------------------------------------------------
 				|/echo \agARRAY RETURNED DATA for step \ay[${x}]\ag: TempSpawnPull_Loc=(\am${TempSpawnPull_Loc})
 				|--------------------------------------------------------------
@@ -976,17 +1189,10 @@ Sub LocPullStepMove(string LocPull_Step)
     /next x
 	|-------------------------------------------------------------------------------------------------------
 
-	| --- NAV TO CampReturnLoc
-	/message ==================================================================
-	/message \ag+++\ax \aoCompleted \arLocation Pull \agCycle:\ax \ao...\ax \atRETURNING TO CAMP !!!\ax
-	/message ==================================================================
-
 	|---------------		
 	|-- MOVE TO CAMP
-	|---------------		
-	|/squelch /e3bca /nav loc ${CampReturnLoc}
-	|/delay 1s
-	/call NavToLoc2 ${CampReturnLoc}
+	|---------------
+	/call ReturnToCamp
 	/delay 5
 	
 	|----------------------------------------------------------------
@@ -1008,7 +1214,7 @@ Sub LocPullStepMove(string LocPull_Step)
 	|------------------------------------------
 
 	/message ==================================================================
-	/message \ag+++\ax \aoCompleted \arSpawnPull \atMainLoop \agCycle:\ax \ao...\ax \agLets do it again !!!\ax
+	/message \ag+++\ax \aoCompleted \ar${HuntMethod} \agCycle:\ax \ao...\ax \agLets do it again !!!\ax
 	/message ==================================================================
 	/delay 3s
 	|------------------------
@@ -1016,10 +1222,29 @@ Sub LocPullStepMove(string LocPull_Step)
 	/call Go2LastSwarmLoc
 	|------------------------
 
-	/goto :MainLocLoopCycle
+	/goto :MainLocLoopCycle_Loc
 
 	|----------------------------------------------------------------------------------------------
 	/if (${Debugging}) /echo Sub LocPullStepMove Exit
+/return
+| --------------------------------------------------------------------------------------------
+
+| --------------------------------------------------------------------------------------------
+| SUB: ReturnToCamp     ( Always Call This to pick up From LastLoc_Step )
+| --------------------------------------------------------------------------------------------
+Sub ReturnToCamp
+	/if (${Debugging}) /echo Sub ReturnToCamp Enter
+	/message ==================================================================
+	/message \ag+++\ax \aoCompleted \ar${HuntMethod} \agCycle:\ax \ao...\ax \atRETURNING TO CAMP !!!\ax
+	/message ==================================================================
+	/e3bcaa /nav loc ${CampReturnLoc}
+	/delay 5
+	
+	:WaitTillAtCamp
+	/if (${Me.Moving}) /delay 5
+	/if (${Me.Moving}) /goto :WaitTillAtCamp
+	
+	/if (${Debugging}) /echo Sub ReturnToCamp Exit
 /return
 | --------------------------------------------------------------------------------------------
 
@@ -1031,8 +1256,8 @@ Sub Go2LastSwarmLoc
 	|------------------------------------------------------------------------------------------------------------
 	|- READ:  LastLoc_Zone and LastLoc_Step from ini file, to pickup at this point if restarted macro.
 	|------------------------------------------------------------------------------------------------------------
-	/varset LastLoc_Zone ${Ini[${IniFileName},Theme,LastLoc_Zone]}
-	/varset LastLoc_Step ${Ini[${IniFileName},Theme,LastLoc_Step]}
+	/varset LastLoc_Zone ${Ini[${IniFileName},Zone,LastLoc_Zone]}
+	/varset LastLoc_Step ${Ini[${IniFileName},Zone,LastLoc_Step]}
 	|-------------------------------------------------------------------------------------------------------
 	|/echo \arGo2LastSwarmLoc: \ayLastLoc_Zone=(${LastLoc_Zone}) | LastLoc_Step=(${LastLoc_Step})
 	|-------------------------------------------------------------------------------------------------------
@@ -1094,92 +1319,40 @@ Sub ForceSpawnStepReset
 Sub DoLocPull
 /if (${Debugging}) /echo Sub DoLocPull Entry
 
-/message \agSetting up pathing to \ay[\arLocation Pull\ay] \agmobs. . . . .
-/message ==================================================================
-
-|---------------------------------------------------------
-| Delete any EXISTING LocalStepArray
-|---------------------------------------------------------
-/if (${Defined[LocalStepArray_${Zone.ShortName}_1]}) {
-	/echo \arDeleting \atOLD \aydungeon array\ar \am[\atLocalStepArray_${Zone.ShortName}_1\am]\ax
-	/deletevar LocalStepArray_${Zone.ShortName}_1
-}
-|---------------------------------------------------------
-
-|------------------------1: 
-	/echo \atLoading steps for: \ay[${Zone.Name}]\at.
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	|------------------------------------------------------
-	|  Define The Array Variables so the dungeon can be Run
-	|------------------------------------------------------
-	
-	| ---------USE HUNTER ARRAY SUB HERE !!!!
-	
-	
-	
-	|------------------------------------------------------
-	/echo \ayCreating dynamic dungeon array.
-	/if (!${Defined[LocalStepArray_${Zone.ShortName}_1]}) {
-		/echo \ayCreating \am[\atLocalStepArray_${Zone.ShortName}_1[1,18]\am]\ax
-		
-		/declare LocalStepArray_${Zone.ShortName}_1[1,18]	string	outer
-		
-		/delay 10
-	}
-	|------------------------------------------------------
-
-	|---------------------------------- MAIN CYCLE BELOW
-	|---------------------------------- LEFT BOTTOM
-	|/varset LocalStepArray_${Zone.ShortName}_1[1,1] 2016.83 451.40 -135.32
-	|/varset LocalStepArray_${Zone.ShortName}_1[1,2] 2016.83 571.16 -135.32
-	|/varset LocalStepArray_${Zone.ShortName}_1[1,3] 2016.83 711.16 -135.32
-	|---------------------------------- LEFT BOTTOM
-
-	|---------------------------------- MAIN CYCLE ABOVE
-
-	|------------------------------------------------------
-	|/echo \ayStep \am[\ag1\am]\ay set to \am[\ag${LocalStepArray_${Zone.ShortName}_1[1,1]}\am]\ay
-	|/echo \ayStep \am[\ag2\am]\ay set to \am[\ag${LocalStepArray_${Zone.ShortName}_1[1,2]}\am]\ay
-	|/echo \ayStep \am[\ag2\am]\ay set to \am[\ag${LocalStepArray_${Zone.ShortName}_1[1,3]}\am]\ay
-
 	/message ==================================================================
+	/message \agSetting up pathing to \ay[\arLocation Pull\ay] \agmobs. . . . .
+	/message ==================================================================
+
+	|------------------------------------------------
+	|--- Remove any comma from the zone name ----
+	|------------------------------------------------
+	/echo \agORIGINAL ZONE NAME\ao=\am(\at${ValidZoneName}\am)\ax
+	/if (${ValidZoneName.Find[,]}) {
+		|/echo ${ValidZoneName} \arhas\ax a COMMA in it !
+		|/echo \arNeed to Modify Zone Name.\ax
+		|/echo CutPart 1=(${Zone.Name.Arg[1,,]})
+		|/echo CutPart 2=(${Zone.Name.Arg[2,,]})
+		/echo \agMODIFIED\ay=\am(\at${Zone.Name.Arg[1,,]} ${Zone.Name.Arg[2,,]}\am)\ax
+		/varset ValidZoneName ${Zone.Name.Arg[1,,]} ${Zone.Name.Arg[2,,]}
+	} else {
+		/echo \at${ValidZoneName}\ax \agdoes NOT have\ax a COMMA in it !\ax
+		/echo \atNo need to Modify Zone Name.\ax
+	}
+	/echo \agFinal ZONE NAME\ao=\am(\at${ValidZoneName}\am)\ax
+	|------------------------------------------------
+	|--- Remove any comma from the zone longname ----
+	|------------------------------------------------
 	
-	
-	|------------------------------------------------------
-	|  Define The Array Variables so the dungeon can be Run
-	|------------------------------------------------------
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
+	|------------------------------------------------------------
+	|Mob Array Information.
+	|------------------------------------------------------------
+	/call ReadINIFile ${ZoneDataFileName} "${ValidZoneName} - (Loc)" Loc
+	/if (!${Defined[RV_LocArray]}) {
+		/echo Loc Array Creation Error, ending macro...
+		/endmacro
+	}
+	|------------------------------------------------------------
+
 	|----------------------------------------------------
 	/echo \agGet ready, the fun is starting soon !
 	/delay 5
@@ -1187,91 +1360,9 @@ Sub DoLocPull
 	/delay 10
 	|- Call Go2LastSwarmLoc after Defining Array
 	/call Go2LastSwarmLoc
-	|------------
- }
-|------------------------1: 
-
-
-/end
-
-
+	|----------------------------------------------------
+	
 /if (${Debugging}) /echo Sub DoLocPull Exit
-/return
-| --------------------------------------------------------------------------------------------
-
-| --------------------------------------------------------------------------------------------
-| SUB: DoSwarmPull_MainLoop_Bigger		Note: Define The Array Variables and kick off Go2LastSwarmLoc
-| --------------------------------------------------------------------------------------------
-Sub DoSwarmPull_MainLoop_Bigger
-/if (${Debugging}) /echo Sub DoSwarmPull_MainLoop_Bigger Entry
-
-/message \agSetting up pathing to \ay[\arSwarm Pull\ay] \agdungeon. . . . .
-/message ==================================================================
-
-|---------------------------------------------------------
-| Delete any EXISTING LocalStepArray
-|---------------------------------------------------------
-/if (${Defined[LocalStepArray_${Zone.ShortName}_2]}) {
-	/echo \arDeleting \atOLD \aydungeon array\ar \am[\atLocalStepArray_${Zone.ShortName}_2\am]\ax
-	/deletevar LocalStepArray_${Zone.ShortName}_2
-}
-|---------------------------------------------------------
-
-|------------------------1: CataCombC
-	/echo \atLoading steps for: \ay[Catacombs of Dranik (Caza)]\at.
-	|------------------------------------------------------
-	|  Define The Array Variables so the dungeon can be Run
-	|------------------------------------------------------
-	|------------------------------------------------------
-	/echo \ayCreating dynamic dungeon array.
-	/if (!${Defined[LocalStepArray_${Zone.ShortName}_2]}) {
-		/echo \ayCreating \am[\atLocalStepArray_${Zone.ShortName}_2[1,6]\am]\ax
-		/declare LocalStepArray_${Zone.ShortName}_2[1,6]	string	outer
-		/delay 10
-	}
-	|------------------------------------------------------
-
-	|---------------------------------- MAIN CYCLE BELOW
-	|---------------------------------- LEFT BOTTOM
-	/varset LocalStepArray_${Zone.ShortName}_2[1,1] 2016.83 711.16 -135.32
-	|---------------------------------- LEFT BOTTOM
-	|---------------------------------- LEFT MIDDLE
-	/varset LocalStepArray_${Zone.ShortName}_2[1,2] 2247.83 711.16 -135.32
-	|---------------------------------- LEFT MIDDLE
-	|---------------------------------- LEFT TOP
-	/varset LocalStepArray_${Zone.ShortName}_2[1,3] 2449.70 711.16 -135.32
-	|---------------------------------- LEFT TOP
-	|---------------------------------- RIGHT TOP
-	/varset LocalStepArray_${Zone.ShortName}_2[1,4] 2449.70 -68.40 -135.32
-	|---------------------------------- RIGHT TOP
-	|---------------------------------- RIGHT MIDDLE
-	/varset LocalStepArray_${Zone.ShortName}_2[1,5] 2228.83 -68.40 -135.32
-	|---------------------------------- RIGHT MIDDLE
-	|---------------------------------- RIGHT BOTTOM
-	/varset LocalStepArray_${Zone.ShortName}_2[1,6] 2007.83 -32.97 -133.30
-	|---------------------------------- RIGHT BOTTOM
-	|---------------------------------- MAIN CYCLE ABOVE
-
-	|------------------------------------------------------
-	/echo \ayStep \am[\ag1\am]\ay set to \am[\ag${LocalStepArray_${Zone.ShortName}_2[1,1]}\am]\ay
-	/echo \ayStep \am[\ag2\am]\ay set to \am[\ag${LocalStepArray_${Zone.ShortName}_2[1,2]}\am]\ay
-	/echo \ayStep \am[\ag3\am]\ay set to \am[\ag${LocalStepArray_${Zone.ShortName}_2[1,3]}\am]\ay
-	/echo \ayStep \am[\ag4\am]\ay set to \am[\ag${LocalStepArray_${Zone.ShortName}_2[1,4]}\am]\ay
-	/echo \ayStep \am[\ag5\am]\ay set to \am[\ag${LocalStepArray_${Zone.ShortName}_2[1,5]}\am]\ay
-	/echo \ayStep \am[\ag6\am]\ay set to \am[\ag${LocalStepArray_${Zone.ShortName}_2[1,6]}\am]\ay
-	/message ==================================================================
-	|----------------------------------------------------
-	/echo \agGet ready, the fun is starting soon !
-	/delay 5
-	/if (${Me.XTarget[1].ID}) /call DoClearTargets
-	/delay 10
-	|- Call Go2LastSwarmLoc after Defining Array
-	/call Go2LastSwarmLoc
-	|------------
- }
-|------------------------1: CataCombC
-
-/if (${Debugging}) /echo Sub DoSwarmPull_MainLoop_Bigger Exit
 /return
 | --------------------------------------------------------------------------------------------
 
@@ -1387,73 +1478,6 @@ Sub NavToLoc2(int Y,int X,int Z)
 | --------------------------------------------------------------------------------------------
 
 | --------------------------------------------------------------------------------------------
-| SUB: NavToLoc3 - [Combat and Agro Aware movement - with invis recheck]
-| --------------------------------------------------------------------------------------------
-Sub NavToLoc3(int Y,int X,int Z)
-	/if (${Debugging}) /echo Entering Sub NavToLoc3 for ${Y} ${X} ${Z} at Line: ${Macro.CurLine}
-	/varset GroupWaitTimer 0
-	/while (${Math.Distance[${Me.Y}, ${Me.X}, ${Me.Z}: ${Y}, ${X}, ${Z}]} > 20) {
-		/if (${Navigation.Active}) {
-			/if (${Debugging}) /echo WaitNav Moving ELSE
-			/if (${CheckBots}) /call GroupDeathChk
-			/if (${CheckBots}) /call GroupManaChk
-			/if (${CheckBots}) /call GroupEndChk
-			/call GMCheck
-			/if (${Me.XTarget[1].ID}) {
-				/if (${Navigation.Active}) /nav stop
-				/if (${Debugging}) /echo CALL DoSinglePull NavToLoc
-				/target ${Me.XTarget[1].ID}
-				/if (${Spawn[id ${Target.ID}].Distance} > 30) /squelch /nav id ${Target.ID}
-				/if (${Me.XTarget[1].ID} && ${Spawn[id ${Target.ID}].Distance} < 30) {
-				/if (${Target.ID}) /face
-				/if (${Bool[${Plugin[MQ2Melee]}]}) /squelch /killthis
-				/squelch /attack on
-				/call Group2Me
-				/call DoClearTargets
-				/doevents
-				/if (${UseClickDamage}) /call Clickies_Damage
-			}
-			} else {
-				/if (${Debugging}) /echo WaitNav Moving ELSE
-				/if (${CheckBots}) /call GroupDeathChk
-				/if (${CheckBots}) /call GroupManaChk
-				/if (${CheckBots}) /call GroupEndChk
-				/call GMCheck
-			}
-			/if (${Me.Combat} && !${Me.XTarget[1].ID}) /squelch /target clear
-			/delay 10
-		} else {
-			/if (${Me.XTarget[1].ID}) {
-				/if (${Navigation.Active}) /nav stop
-				/if (${Debugging}) /echo CALL FARM STUFF NavToLoc II
-				/target ${Me.XTarget[1].ID}
-				/if (${Spawn[id ${Target.ID}].Distance} > 30) /squelch /nav id ${Target.ID}
-				/if (${Me.XTarget[1].ID} && ${Spawn[id ${Target.ID}].Distance} < 30) {
-				/if (${Target.ID}) /face
-				/if (${Bool[${Plugin[MQ2Melee]}]}) /squelch /killthis
-				/squelch /attack on
-				/call Group2Me
-				/call DoClearTargets
-				/doevents
-				/if (${UseClickDamage}) /call Clickies_Damage
-			}
-			} else {
-				/if (${CheckBots}) /call GroupDeathChk
-			}
-			/if (${Me.Combat} && !${Me.XTarget[1].ID}) /squelch /target clear
-			/if (!${Me.Combat} && !${Me.XTarget[1].ID}) /call CheckInvis
-			/if (!${Me.Moving} && !${Me.Combat} && !${Me.XTarget[1].ID} && ${Me.Invis}) /squelch /e3bcga /nav loc ${Y} ${X} ${Z}
-			/delay 5 ${Me.Moving}
-			/delay 5 ${Navigation.Active}
-		}
-	}
-	/delay 2s
-	|/if (${Navigation.Active}) /nav stop
-	/if (${Debugging}) /echo Sub NavToLoc3 Exit
-/return
-| --------------------------------------------------------------------------------------------
-
-| --------------------------------------------------------------------------------------------
 | SUB: WaitNav
 | --------------------------------------------------------------------------------------------
 Sub WaitNav(NavTargetID)
@@ -1487,11 +1511,13 @@ Sub WaitNav(NavTargetID)
 				/call GMCheck
 			}
 			/if (${Me.Combat} && !${Me.XTarget[1].ID}) /squelch /target clear
-			/if (!${courseCorrection}) {
+			/if (!${courseCorrection}) {				
 				|------  ALL GO TO TARGET - staggered
-				/nav id ${NavTargetID}
-				/delay 5
-				/squelch /e3bca /nav id ${NavTargetID}
+				/if (!${Me.Moving} && !${Me.Combat} && !${Me.XTarget[1].ID}) {
+					/squelch /nav id ${NavTargetID}
+					/delay 5
+					/squelch /e3bca /nav id ${NavTargetID}		
+				}
 				|------  ALL GO TO TARGET - staggered
 				/varset courseCorrection ${courseCorrection.OriginalValue}
 			}
@@ -1524,7 +1550,7 @@ Sub WaitNav(NavTargetID)
 				/if (${CheckBots}) /call GroupEndChk
 			}
 			/if (${Me.Combat} && !${Me.XTarget[1].ID}) /squelch /target clear
-			/squelch /nav id ${NavTargetID}
+			/if (!${Me.Moving} && !${Me.Combat} && !${Me.XTarget[1].ID}) /squelch /nav id ${NavTargetID}
 		}
 	}
 	/if (${Navigation.Active}) /nav stop
@@ -2344,7 +2370,7 @@ Sub CheckThings
 	/call CheckPlugin MQ2Nav
 	/call CheckMesh
 	/call CheckPlugin MQ2Events
-	|-----------------------------
+	|------------------------------------------------------------   
 	/if (${UseMq2Melee}) {
 		/call CheckPlugin MQ2Melee
 	} else {
@@ -2353,16 +2379,35 @@ Sub CheckThings
 			/squelch /plugin MQ2Melee unload noauto
 		}
 	}
-	|-----------------------------
+	|------------------------------------------------------------   
 	/call CheckPlugin MQ2MoveUtils
 
-	|----------------------
+	|------------------------------------------------------------   
 	/if (${Bool[${Plugin[MQ2Bucles]}]}) {
         /squelch /plugin MQ2Bucles unload noauto
         /echo MQ2Bucles detected! This macro doesn't like it! Unloading temporarily ...
     }
-	|----------------------
+	|------------------------------------------------------------   
 
+	|------------------------------------------------------------   
+	/if (${Group.Member[1].ID}) {
+		/varset InAGroup TRUE
+		|---------------------------------------
+		|--- Check if running E3
+		|---------------------------------------
+		/varset E3Detected ${MQ2Mono.Query[e3,InCombat]}
+		/if (${E3Detected.NotEqual[NULL]}) {
+			/echo E3 \atIS\ax running, defaulting to E3 for group communication. 
+		} else {
+			/echo E3 \arNOT\ax running, checking if EQBCS is active.
+			/endmacro
+			}		
+		}
+		|---------------------------------------
+	}
+	|------------------------------------------------------------ 	
+
+	|------------------------------------------------------------
 	/if (${LootCorpse}) {		
 		/message ==================================================================
 		/message \ay--- \atENABLING\ax \am${MacroName}\ax LOOTING, we will loot corpses.
@@ -2382,6 +2427,7 @@ Sub CheckThings
 		/message \ar--- DISABLING ${MacroName} LOOTING, YOU WILL NOT LOOT CORPSES !
 		/message ==================================================================
 	}
+	|------------------------------------------------------------
 
 	/if (${Endmac}) /end
 	/if (${Debugging}) /echo Sub CheckThings Exit
