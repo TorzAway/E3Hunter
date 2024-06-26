@@ -1,11 +1,8 @@
 |****************************************************************************************************************
-E3Hunter.mac - by Kroaking
-June 26th, 2024 - 04:27:00 PM
-
-This will be updated after Rekka pushes Exposed E3 ini settings to E3Bots to be captured via mono queries.
-
+   E3Hunter.mac - by Kroaking
+June 26th, 2024 - 07:32:00 PM
 ****************************************************************************************************************|
-/log on
+/squelch /log on
 
 #Event CantSee "You cannot see your target."
 #Event TooFar  "Your target is #*#, get closer!"
@@ -112,7 +109,10 @@ Sub Main
 			/varset PullRange ${CampRadius}
 			/call DoSinglePull_Any
 		}
-		/if (${HuntMethod.Equal[NAME]}) /call DoSinglePull_Name		
+		/if (${HuntMethod.Equal[NAME]}) {
+			/varset RV_MaxRadius ${RV_Range}
+			/call DoSinglePull_Name
+		}
 		/if (${Me.XTarget[1].ID}) /Call DoClearTargets
 		/call GMCheck
 		/doevents
@@ -142,7 +142,7 @@ Sub Declares
 
 	|==================== DO NOT ALTER THESE VALUES ====================
 	/declare MacroName			string	outer	E3Hunter
-	/declare version			string	outer	1.0.2
+	/declare version			string	outer	1.0.3
 	/declare IniFileName		string	outer	${MacroName}_${Me.CleanName}.ini
 	/declare ZoneDataFileName	string	outer	${MacroName}_ZoneData.ini
 	/declare FirstRun			int		outer	0
@@ -218,9 +218,9 @@ Sub Declares
 	/call CheckINI ${IniFileName} General ReclaimDC bool FALSE
 	
 	/call CheckINI ${IniFileName} Camp RV_CampRadius int 2500
-	/call CheckINI ${IniFileName} Camp RV_ZRadius int 500
 	/call CheckINI ${IniFileName} Camp RV_GetMobAtFullHealth int 0
-	/call CheckINI ${IniFileName} Camp RV_Range int 10
+	/call CheckINI ${IniFileName} Camp RV_ZRadius int 500
+	/call CheckINI ${IniFileName} Camp RV_Range int 250
 	/call CheckINI ${IniFileName} Camp RV_MinZRange int -50
 	/call CheckINI ${IniFileName} Camp RV_MaxZRange int 50
 	/call CheckINI ${IniFileName} Camp RV_FailMax int 3
@@ -268,6 +268,7 @@ Sub Declares
 	/declare RV_FastRange        			int outer
 	/declare RV_RangeMax         			int outer
 	/declare RV_RangeMin         			int outer
+	/declare RV_MaxRadius         			int outer
 	/varcalc RV_FastRange ${RV_Range}+3
 	/varcalc RV_RangeMax ${RV_Range}+1
 	/varcalc RV_RangeMin ${RV_Range}-1   
@@ -921,67 +922,284 @@ Sub DoSinglePull_Name(string Enemy)
 	}
 	|------------------------------------------------------------
 	
-	
-	
-	
-	
-	
-	:MainLocLoopCycle_Mob
+	:MainLocLoopCycle_Name
 	/delay 1s
 	/message ==================================================================
 	/message \ag+++\ax \ayStarting \ar${HuntMethod} \agCycle:\ax \ao...\ax \arLets go !\ax
 	/message ==================================================================
 	/delay 3s
-	
-	
+
+	|-------------------------------------------------------------------------------------------------------
 	|--------------------
-	
-	|--- MAIN CODE HERE FOR NAMED MOB TARTETING
-	
+	|--- MAIN CODE HERE FOR NAME PULLS
 	|--------------------
+	|-------------------------------------------------------------------------------------------------------
+	:StartNamePulls
+	/doevents
+	/call GetTarget
+ 
+	|------------------- Initiat Combat LOGIC -----------------|
 	
+	|----------------------------------------------
 	
-	
-	
-	
-	|---------------		
-	|-- MOVE TO CAMP
-	|---------------
-	/call ReturnToCamp
+	|----------------------------------------------------------
+	/if (!${Me.Combat} && !${Me.XTarget[1].ID}) {
+		|----------------------------------------------
+		|-- Just nav to loc, using NavToLoc function will cause you to engage mobs along the path !
+		|----------------------------------------------
+		
+		|----------------------------------------------
+		/if (${RV_HasTarget}) {		
+			|-----
+			/if (${Navigation.PathExists[id ${Target.ID}]}) {
+				/squelch /nav id ${Target.ID} 
+				/delay 7
+				/squelch /e3bcga /nav id ${Target.ID} 
+			} else {
+				/squelch /moveto id ${Target.ID} mdist 10			
+				/delay 7
+				/squelch /e3bcga /moveto id ${Target.ID} mdist 10
+			}
+			|-----
+		}
+		|----------------------------------------------
+	}
+	|------------------------------
+	/while (${Navigation.Active}) {
+		/call SetLoc
+		/call CheckStuck
+		/delay 5
+	}
+	|------------------------------
+	/squelch /e3bca /nav id ${Me.ID}
 	/delay 5
+	|----------------------------------------------------------
 	
+				
+	|----------------------------------------------	
+	/if (${RV_HasTarget}) /call CombatSub
+	|------------------- Add Logic -----------------| 
+	/call CheckAggro
+	/call CheckForAdds
+	|------------------- Add Logic -----------------| 
+
 	|----------------------------------------------------------------
 	|-- Clear the camp location of any corpses before the next cycle.
 	|----------------------------------------------------------------
 	/if (${LootCorpse} && !${Me.XTarget[1].ID}) /call CheckForCorpses
-	|----------------------------------------------------------------
-
-	|------------------
-	/if (${ReclaimDC}) /call ReclaimAltDC
-	|------------------
-
+	|----------------------------------------------------------------	
+	
 	|------------------------------------------
 	/if (!${Me.XTarget[1].ID} && ${CheckBots}) {
 		/call GroupDeathChk
 		/call GroupManaChk
 		/call GroupEndChk
 	}
-	|------------------------------------------
+	|------------------------------------------	
 
+	/call ResetSub
+	/goto :StartNamePulls
+	|-------------------------------------------------------------------------------------------------------
+	|--------------------
+	|--- MAIN CODE HERE FOR NAME PULLS
+	|--------------------
+	|-------------------------------------------------------------------------------------------------------
+	
 	/message ==================================================================
 	/message \ag+++\ax \aoCompleted \ar${HuntMethod} \agCycle:\ax \ao...\ax \agLets do it again !!!\ax
 	/message ==================================================================
 	/delay 3s
 	|------------------------
-	/call ForceSpawnStepReset
-	/call Go2LastSwarmLoc
-	|------------------------
 
-	/goto :MainLocLoopCycle_Mob
+	/goto :MainLocLoopCycle_Name
 	
 	|-----------------------------------------------
 	/if (${Debugging}) /echo DoSinglePull_Name Sub Exit
 /return
+| --------------------------------------------------------------------------------------------------
+
+| --------------------------------------------------------------------------------------------------
+|SUB: GetTarget
+| --------------------------------------------------------------------------------------------------
+  Sub GetTarget
+  /declare RV_CurrentRadius   int local
+  /declare RV_TargetSub   int local
+  /declare BadMeTarget int local 0
+  /declare BadPCTarget int local 0
+
+:Acquire
+  /call CheckAggro
+  /if (${Target.Type.Equal[Corpse]}) /squelch /target clear
+  
+  /for RV_CurrentRadius 10 to ${RV_MaxRadius} step ${RV_StepValue}
+    /for RV_TargetSub 1 to ${RV_MobArray.Size}
+    :BadTarget
+      /if (${Target.ID}==${Me.ID}) {
+        /if (!${BadMeTarget}) /echo Hunter.mac: You have yourself on target, pausing macro until /tar clear
+        /varset BadMeTarget 1
+        /delay 1s
+        /goto :BadTarget
+      }
+      /if (${Target.Type.Equal[PC]}) {
+        /if (!${BadPCTarget}) /echo Hunter.mac: You have a PC on target, pausing macro until /tar clear
+        /varset BadPCTarget 1
+        /delay 1s
+        /goto :BadTarget
+      }
+      /varset BadMeTarget 0
+      /varset BadPCTarget 0
+
+    |/echo Mob array size = ${RV_MobArray.Size}
+    |/echo RV_TargetSub = ${RV_TargetSub}
+    |/echo Mob to target: "${RV_MobArray[${RV_TargetSub}]}"
+
+      /echo - Looking for: (\at${RV_MobArray[${RV_TargetSub}]}\ax) distance (\ag${RV_CurrentRadius}\ax).
+    |/echo Will use: /squelch /target targetable radius ${RV_CurrentRadius} notid ${RV_InvalidTargetID} npc "${RV_MobArray[${RV_TargetSub}]}"
+    
+    /squelch /target targetable radius ${RV_CurrentRadius} notid ${RV_InvalidTargetID} npc "${RV_MobArray[${RV_TargetSub}]}"
+     |/squelch /target targetable radius ${RV_CurrentRadius} nopcnear notid ${RV_InvalidTargetID} npc "${RV_MobArray[${RV_TargetSub}]}"
+
+      /delay 2 ${Target.ID}
+
+      /varset RV_MyTargetID ${Target.ID}
+      /varset RV_MyTargetDead 0
+      /if (${Target.ID}) {
+	  
+	    | -- MOB CAN BE LOWER THAN 100% (FROM DS) AND STILL VALID, SO WE USE RV_GetMobAtFullHealth TO IGNORE THIS CONDITION LIMITATION
+        /if (${RV_GetMobAtFullHealth} && ${Int[${Target.PctHPs}]}<100) {
+          /echo \ar Mob NOT a Full Health, (${Int[${Target.PctHPs}]}) picking another...\ax
+          /varset RV_InvalidTargetID ${Target.ID}
+          /call ResetSub
+          /goto :Acquire
+        }
+		
+        /if (${Int[${Target.Z}]}<${RV_MinZRange}) {
+          /echo \ar Mob is BELOW Min Z Range, (${Int[${Target.Z}]}) picking another...\ax
+          /varset RV_InvalidTargetID ${Target.ID}
+          /call ResetSub
+          /goto :Acquire
+        }
+        /if (${Int[${Target.Z}]}>${RV_MaxZRange}) {
+          /echo \ar Mob is ABOVE Max Z Range, (${Int[${Target.Z}]}) picking another...\ax
+          /varset RV_InvalidTargetID ${Target.ID}
+          /call ResetSub
+          /goto :Acquire
+        }
+        /if (${Target.ID}==${Me.Pet.ID}) {
+          /echo \ar You have your pet targeted...\ax
+          /varset RV_InvalidTargetID ${Target.ID}
+          /call ResetSub
+          /squelch /target clear
+          /goto :Acquire
+        }
+        /varset RV_HasTarget 1
+        /varset RV_MyTargetName ${Target.CleanName}
+        /echo \ar+\ax Acquired (\at${Target.CleanName}\ax) at range (\ag${Int[${Target.Distance}]}\ax).
+        /return
+      }
+      /call CheckAggro
+    /next RV_TargetSub
+    /delay 2
+  /next RV_CurrentRadius
+
+  /if (!${Target.ID}) {
+    /delay 1s
+    /varcalc RV_FailCounter ${RV_FailCounter}+1
+	/echo Failed to Acquire Target in Range (\at${RV_MaxRadius}\ax) (\ar${RV_FailCounter}\ax) Time(s)
+    /if (${RV_FailCounter}>=${RV_FailMax}) {
+		/call ReturnToCamp
+		/varset RV_FailCounter 0
+		/return
+    }
+    /goto :Acquire
+  }
+
+  /return
+| --------------------------------------------------------------------------------------------------
+
+| --------------------------------------------------------------------------------------------------
+|SUB: CombatSub
+| --------------------------------------------------------------------------------------------------
+  Sub CombatSub
+  /echo \ar --- Attacking Mob NOW! \ax
+  /varset RV_Fighting 1
+  /varset RV_TargetDead 0
+
+  |------------------------------------------------------
+  | Call for melee Assist via E3 / EQBCS
+  |------------------------------------------------------
+  /if (${MyClassType.Equal[Melee]}) {
+  	/attack on
+	|----------------------------------------
+	/if (${InAGroup}) {
+		/timed 5  /squelch /e3bcg /target ID ${Target.ID}
+		/timed 10 /squelch /e3bcg /pet attack
+		/timed 15 /squelch /e3bcg /pet swarm
+		/timed 20 /squelch /e3bcg /assistme		
+	}
+	|----------------------------------------
+  }  
+  |------------------------------------------------------
+  
+:CombatLoop
+  /doevents
+  
+  /if (!${Target.ID}) {
+    /if (${Target.Type.Equal[Corpse]}) /squelch /target clear
+    /attack off
+    /keypress forward
+    /keypress back
+
+    /varset RV_TargetDead 1
+    /varset RV_Fighting 0
+    /delay 1s
+    /squelch /target radius 50 corpse
+    /delay 5 ${Target.ID}
+    /if (!${Target.ID}) {
+      /call ResetSub
+      /return
+    }
+    /if (${Target.ID}) /face nolook
+  }
+  /if (!${RV_TargetDead}) {
+    /goto :CombatLoop
+  }
+  /return
+| --------------------------------------------------------------------------------------------------
+
+| --------------------------------------------------------------------------------------------------
+|SUB: Check Aggro
+| --------------------------------------------------------------------------------------------------
+  Sub CheckAggro
+
+  /if (!${Target.ID} && ${Me.XTarget[1].ID}) {
+    /target id ${Me.XTarget[1].ID}
+    /varset RV_MyTargetID ${Target.ID}
+    /varset RV_MyTargetDead 0
+    /varset RV_HasTarget 1
+    /varset RV_MyTargetName ${Target.CleanName}
+  }
+
+  /return
+| --------------------------------------------------------------------------------------------------
+
+| --------------------------------------------------------------------------------------------------
+|SUB: CheckForAdds
+| --------------------------------------------------------------------------------------------------
+  Sub CheckForAdds
+
+  |------------------------------------------------------------
+  | CHECK FOR ADDS BEFORE LOOTING
+  |------------------------------------------------------------
+  /if (${Me.XTarget[1].ID}) {
+    /echo \ar*** Looks like we have adds ! ***\ax
+    /delay 5
+    /varset RV_HasTarget 1
+    /varset RV_Fighting 1
+  }
+  |------------------------------------------------------------
+
+  /return
 | --------------------------------------------------------------------------------------------------
 
 | --------------------------------------------------------------------------------------------------
@@ -1197,10 +1415,6 @@ Sub LocPullStepMove(string LocPull_Step)
 	/if (${LootCorpse} && !${Me.XTarget[1].ID}) /call CheckForCorpses
 	|----------------------------------------------------------------
 
-	|------------------
-	/if (${ReclaimDC}) /call ReclaimAltDC
-	|------------------
-
 	|------------------------------------------
 	/if (!${Me.XTarget[1].ID} && ${CheckBots}) {
 		/call GroupDeathChk
@@ -1236,6 +1450,10 @@ Sub ReturnToCamp
 	/e3bcaa /nav loc ${CampReturnLoc}
 	/delay 5
 	
+	|------------------
+	/if (${ReclaimDC}) /call ReclaimAltDC
+	|------------------
+	
 	:WaitTillAtCamp
 	/if (${Me.Moving}) /delay 5
 	/if (${Me.Moving}) /goto :WaitTillAtCamp
@@ -1266,8 +1484,8 @@ Sub WaitForSpawns
 			/return
 		}
 		|--------------------------------------------
-	
-	|-----------------------------------------------}
+	}
+	|-----------------------------------------------
 	
 	/if (${Debugging}) /echo Sub WaitForSpawns Exit
 /return
@@ -1346,27 +1564,29 @@ Sub DoLocPull
 
 	/message ==================================================================
 	/message \agSetting up pathing to \ay[\arLocation Pull\ay] \agmobs. . . . .
-	/message ==================================================================
-
 	|------------------------------------------------
 	|--- Remove any comma from the zone name ----
 	|------------------------------------------------
-	/echo \ag - ORIGINAL ZONE NAME\ao=\am(\at${ValidZoneName}\am)\ax
+	/message \ag - ORIGINAL ZONE NAME\ao=\am(\at${ValidZoneName}\am)\ax
 	/if (${ValidZoneName.Find[,]}) {
 		|/echo ${ValidZoneName} \arhas\ax a COMMA in it !
 		|/echo \arNeed to Modify Zone Name.\ax
 		|/echo CutPart 1=(${Zone.Name.Arg[1,,]})
 		|/echo CutPart 2=(${Zone.Name.Arg[2,,]})
-		/echo \ag - MODIFIED\ay=\am(\at${Zone.Name.Arg[1,,]} ${Zone.Name.Arg[2,,]}\am)\ax
+		/message  \ag - MODIFIED\ay=\am(\at${Zone.Name.Arg[1,,]} ${Zone.Name.Arg[2,,]}\am)\ax
 		/varset ValidZoneName ${Zone.Name.Arg[1,,]} ${Zone.Name.Arg[2,,]}
 	} else {
-		/echo \at - ${ValidZoneName}\ax \agdoes NOT have\ax a COMMA in it !\ax
-		/echo \at - No need to Modify Zone Name.\ax
+		/message \at - ${ValidZoneName}\ax \agdoes NOT have\ax a COMMA in it !\ax
+		/message \at - No need to Modify Zone Name.\ax
 	}
-	/echo \agFinal ZONE NAME\ao=\am(\at${ValidZoneName}\am)\ax
+	/message \agFinal ZONE NAME\ao=\am(\at${ValidZoneName}\am)\ax
 	|------------------------------------------------
 	|--- Remove any comma from the zone longname ----
 	|------------------------------------------------
+	/message ==================================================================
+	
+	
+	/end
 	
 	|------------------------------------------------------------
 	|Mob Array Information.
@@ -1783,6 +2003,22 @@ Sub Zoning
   |-------------------------------------------------------------------------------------
 
   /if (${Debugging}) /echo Sub LootMob_DC_Only Exit
+  /return
+| --------------------------------------------------------------------------------------------
+
+| --------------------------------------------------------------------------------------------
+| SUB: ResetSub
+| --------------------------------------------------------------------------------------------
+  Sub ResetSub
+  /keypress esc
+  /keypress esc
+  /keypress esc
+  /keypress esc
+
+  /varset RV_HasTarget 0
+  /varset RV_TargetDead 0
+  /varset RV_Fighting 0
+
   /return
 | --------------------------------------------------------------------------------------------
 
@@ -2433,7 +2669,8 @@ Sub CheckThings
 	|------------------------------------------------------------ 	
 
 	|------------------------------------------------------------
-	/if (${LootCorpse}) {		
+	/if (${LootCorpse}) {
+		/hidecorpse looted	
 		/message ==================================================================
 		/message \ay--- \atENABLING\ax \am${MacroName}\ax LOOTING, we will loot corpses.
 		/if (${LootMethod.Equal[DCONLY]}) {
