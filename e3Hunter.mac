@@ -1,6 +1,6 @@
 |****************************************************************************************************************
-   E3Hunter.mac - by Kroaking
-June 26th, 2024 - 07:32:00 PM
+e3Hunter.mac - by Kroaking
+Last Updated: June 26th, 2024 - 11:33:00 PM
 ****************************************************************************************************************|
 /squelch /log on
 
@@ -43,22 +43,47 @@ Sub Main
 	/if (${HuntMethod.Equal[Name]}) /message \at***\at \agHuntMethod: \ayis set to \at[\ar${HuntMethod}\at]\ar.
 	|------------------------------------------------------------------------------------------------------	
 	/message ==================================================================	
-	/delay 3s
 	
 	|----------------
 	/call CheckThings
 	|----------------
-
-	/message \ag- UseClickBuffs \ayis set to \at[\ag${UseClickBuffs}\at]\ax
-	/message \ag- UseClickDamage \ayis set to \at[\ag${UseClickDamage}\at]\ax
+	
+	|---------------------------------------------------------------------------
+	/message \ag- AssistMe \ayis set to \at[\ag${AssistMe}\at]\ax
 	/message \ag- CheckBots \ayis set to \at[\ag${CheckBots}\at]\ax
 	/message \ag- DoBurns \ayis set to \at[\ag${DoBurns}\at]\ax
+	/message \ag- GroupNavToMe \ayis set to \at[\ag${GroupNavToMe}\at]\ax
+	/message \ag- UseClickBuffs \ayis set to \at[\ag${UseClickBuffs}\at]\ax
+	/message \ag- UseClickDamage \ayis set to \at[\ag${UseClickDamage}\at]\ax	
 	/message \ag- UseMq2Melee \ayis set to \at[\ag${UseMq2Melee}\at]\ax
 	/message \ag- LootCorpse \ayis set to \at[\ag${LootCorpse}\at]\ax
 	/message \ag- LootMethod \ayis set to \at[\ag${LootMethod}\at]\ax
 	/message \ag- MinItemValue \ayis set to \at[\ag${MinItemValue}\at]\ax
-	/message \ag- ReclaimDC \ayis set to \at[\ag${ReclaimDC}\at]\ax		
+	/message \ag- ReclaimDC \ayis set to \at[\ag${ReclaimDC}\at]\ax	
+	|---------------------------------------------------------------------------
 	
+	|---------------------------------------------------------------------------
+	/if (${HuntMethod.Equal[ANY]}) {
+		/message ==================================================================
+		/message \ag- RV_CampRadius \ayis set to \at[\ag${RV_CampRadius}\at]\ax	
+	}
+	|---------------------------------------------------------------------------	
+	
+	|---------------------------------------------------------------------------
+	/if (${HuntMethod.Equal[NAME]}) {
+		/message ==================================================================
+		/message \ag- RV_CampRadius \ayis set to \at[\ag${RV_CampRadius}\at]\ax
+		/message \ag- RV_GetMobAtFullHealth \ayis set to \at[\ag${RV_GetMobAtFullHealth}\at]\ax
+		/message \ag- RV_Range \ayis set to \at[\ag${RV_Range}\at]\ax
+		/message \ag- RV_ZRadius \ayis set to \at[\ag${RV_ZRadius}\at]\ax
+		/message \ag- RV_MinZRange \ayis set to \at[\ag${RV_MinZRange}\at]\ax
+		/message \ag- RV_MaxZRange \ayis set to \at[\ag${RV_MaxZRange}\at]\ax
+		/message \ag- RV_FailMax \ayis set to \at[\ag${RV_FailMax}\at]\ax
+		/message \ag- RV_StepValue \ayis set to \at[\ag${RV_StepValue}\at]\ax
+		/message \ag- RV_SpawnRecheckTimer \ayis set to \at[\ag${RV_SpawnRecheckTimer}\at]\ax	
+	}
+	|---------------------------------------------------------------------------
+
 	/if (${HuntMethod.Equal[Loc]})  {
 		/message ==================================================================
 		/message \am- LastLoc_Zone \ayis set to \at[\ag${LastLoc_Zone}\at]\ax
@@ -73,7 +98,6 @@ Sub Main
 	|--------------
 	/call GroupWait
 	|--------------
-	
 	
 	| --- MAIN ------------------------------------------------------------------------------
 	:mainloop
@@ -96,7 +120,6 @@ Sub Main
 	|----------------------------
 	| ENGINE SELECT -- START
 	|----------------------------
-	/delay 5s
 	|-------------------------While Not Dead 
 	/while (!${Me.State.Equal[DEAD]} && (${Zone.ID}==${startZone})) {
 		|-----------------------------------------------
@@ -141,8 +164,8 @@ Sub Declares
 	/declare PullRange 			int outer
 
 	|==================== DO NOT ALTER THESE VALUES ====================
-	/declare MacroName			string	outer	E3Hunter
-	/declare version			string	outer	1.0.3
+	/declare MacroName			string	outer	e3Hunter
+	/declare version			string	outer	1.0.5
 	/declare IniFileName		string	outer	${MacroName}_${Me.CleanName}.ini
 	/declare ZoneDataFileName	string	outer	${MacroName}_ZoneData.ini
 	/declare FirstRun			int		outer	0
@@ -166,7 +189,6 @@ Sub Declares
 	/declare SitDelay 			timer 	outer 5s
 	/declare Endmac 			bool 	outer FALSE
 	/declare BagsAreFull		bool 	outer FALSE
-	/declare SpawnWaitTime		int		outer 60
 
 	|** SPECIFIC of E3Hunter.mac/SwarmPull declares **|
 	|----------------------------------------------------------
@@ -218,15 +240,14 @@ Sub Declares
 	/call CheckINI ${IniFileName} General ReclaimDC bool FALSE
 	
 	/call CheckINI ${IniFileName} Camp RV_CampRadius int 2500
-	/call CheckINI ${IniFileName} Camp RV_GetMobAtFullHealth int 0
-	/call CheckINI ${IniFileName} Camp RV_ZRadius int 500
+	/call CheckINI ${IniFileName} Camp RV_GetMobAtFullHealth int 1
 	/call CheckINI ${IniFileName} Camp RV_Range int 250
+	/call CheckINI ${IniFileName} Camp RV_ZRadius int 500
 	/call CheckINI ${IniFileName} Camp RV_MinZRange int -50
 	/call CheckINI ${IniFileName} Camp RV_MaxZRange int 50
 	/call CheckINI ${IniFileName} Camp RV_FailMax int 3
 	/call CheckINI ${IniFileName} Camp RV_StepValue int 25
-	/call CheckINI ${IniFileName} Camp RV_ZonePCCheck int 0
-	/call CheckINI ${IniFileName} Camp RV_SpawnRecheckTimer int 10
+	/call CheckINI ${IniFileName} Camp RV_SpawnRecheckTimer int 60
 
 	/call CheckINI ${IniFileName} Pull PullAbility string ReplaceMeWithYourSkill
 	/call CheckINI ${IniFileName} Pull PullAbilityRange int 30
@@ -272,11 +293,6 @@ Sub Declares
 	/varcalc RV_FastRange ${RV_Range}+3
 	/varcalc RV_RangeMax ${RV_Range}+1
 	/varcalc RV_RangeMin ${RV_Range}-1   
-	
-	|------------------------------------------------------------  
-	/declare RV_MaxRadius_Param0	int outer  
-	/if (${Param0}) /varset RV_MaxRadius_Param0 ${Param0}   
-	|------------------------------------------------------------  
 	
 	/declare anchorY  			int  	outer ${Me.Y}
 	/declare anchorX  			int  	outer ${Me.X}
@@ -370,7 +386,7 @@ Sub CampInMarrs
 	/delay 3s
 	|------------------------
 	|--- Reset the Cycle Loop
-	/call ForceSpawnStepReset
+	/if (${HuntMethod.Equal[LOC]}) /call ForceSpawnStepReset
 	|------------------------
 	/echo \arCAMPING TO DESKTOP !!!\ax
 	/squelch /e3bcaa /camp desktop
@@ -892,25 +908,27 @@ Sub DoSinglePull_Name(string Enemy)
 	/if (${Debugging}) /echo DoSinglePull_Name Sub Entry
 	|-----------------------------------------------
 	
+	/message ==================================================================
 	|------------------------------------------------
 	|--- Remove any comma from the zone name ----
 	|------------------------------------------------
-	/echo \ag - ORIGINAL ZONE NAME\ao=\am(\at${ValidZoneName}\am)\ax
+	/message \ag - ORIGINAL ZONE NAME\ao=\am(\at${ValidZoneName}\am)\ax
 	/if (${ValidZoneName.Find[,]}) {
 		|/echo ${ValidZoneName} \arhas\ax a COMMA in it !
 		|/echo \arNeed to Modify Zone Name.\ax
 		|/echo CutPart 1=(${Zone.Name.Arg[1,,]})
 		|/echo CutPart 2=(${Zone.Name.Arg[2,,]})
-		/echo \ag - MODIFIED\ay=\am(\at${Zone.Name.Arg[1,,]} ${Zone.Name.Arg[2,,]}\am)\ax
+		/message  \ag - MODIFIED\ay=\am(\at${Zone.Name.Arg[1,,]} ${Zone.Name.Arg[2,,]}\am)\ax
 		/varset ValidZoneName ${Zone.Name.Arg[1,,]} ${Zone.Name.Arg[2,,]}
 	} else {
-		/echo \at - ${ValidZoneName}\ax \agdoes NOT have\ax a COMMA in it !\ax
-		/echo \at - No need to Modify Zone Name.\ax
+		/message \at - ${ValidZoneName}\ax \agdoes NOT have\ax a COMMA in it !\ax
+		/message \at - No need to Modify Zone Name.\ax
 	}
-	/echo \agFinal ZONE NAME\ao=\am(\at${ValidZoneName}\am)\ax
+	/message \agFinal ZONE NAME\ao=\am(\at${ValidZoneName}\am)\ax
 	|------------------------------------------------
 	|--- Remove any comma from the zone longname ----
 	|------------------------------------------------
+	/message ==================================================================
 	
 	|------------------------------------------------------------
 	|Mob Array Information.
@@ -1406,6 +1424,7 @@ Sub LocPullStepMove(string LocPull_Step)
 	|---------------		
 	|-- MOVE TO CAMP
 	|---------------
+	/call ForceSpawnStepReset
 	/call ReturnToCamp
 	/delay 5
 	
@@ -1427,8 +1446,8 @@ Sub LocPullStepMove(string LocPull_Step)
 	/message \ag+++\ax \aoCompleted \ar${HuntMethod} \agCycle:\ax \ao...\ax \agLets do it again !!!\ax
 	/message ==================================================================
 	/delay 3s
+	
 	|------------------------
-	/call ForceSpawnStepReset
 	/call Go2LastSwarmLoc
 	|------------------------
 
@@ -1471,14 +1490,14 @@ Sub WaitForSpawns
 	/if (${Debugging}) /echo Sub WaitForSpawns Enter
 	
 	/message ==================================================================
-	/message \ag+++\ax \aoWaiting \ar${SpawnWaitTime}s\ax \aofor re-spawns.\ax
+	/message \ag+++\ax \aoWaiting \ar${RV_SpawnRecheckTimer}s\ax \aofor re-spawns.\ax
 	/message ==================================================================
 
 	|-----------------------------------------------
 	/while (!${Me.Combat} && !${Me.XTarget[1].ID}) {
 		|--------------------------------------------
 		/if (!${Me.Combat} && !${Me.XTarget[1].ID}) {
-			/delay ${SpawnWaitTime}s
+			/delay ${RV_SpawnRecheckTimer}s
 		} else {
 			/call DoClearTargets
 			/return
@@ -1542,7 +1561,7 @@ Sub Go2LastSwarmLoc
 Sub ForceSpawnStepReset
 /if (${Debugging}) /echo Sub ForceSpawnStepReset Entry
 
-	/echo \arForcing LastSwarmed_Step reset to step \ay(\at1\ay)
+	/echo \arForcing LastLoc_Step reset to step \ay(\at1\ay)
 
 	|----------------------------------------------------------
 	| -- Write STEP 1 to the ini file since we want to set our initial first step for that zone.
@@ -1584,10 +1603,7 @@ Sub DoLocPull
 	|--- Remove any comma from the zone longname ----
 	|------------------------------------------------
 	/message ==================================================================
-	
-	
-	/end
-	
+		
 	|------------------------------------------------------------
 	|Mob Array Information.
 	|------------------------------------------------------------
@@ -2675,7 +2691,7 @@ Sub CheckThings
 		/message \ay--- \atENABLING\ax \am${MacroName}\ax LOOTING, we will loot corpses.
 		/if (${LootMethod.Equal[DCONLY]}) {
 			/squelch /lootoff
-			/message \ay--- \agLOOTING METHOD:\ax (\am${LootMethod}\ax) we will only loot [\atDiamond Coin\ay]
+			/message \ay--- \agLOOTING METHOD:\ax (\am${LootMethod}\ax) looting \am[\atDiamond Coin\am]\ax \ao+\ax (anything woth more than \ag${MinItemValue}\ax plat)
 		}  
 		/if (${LootMethod.Equal[E3]}) {
 			/squelch /looton
@@ -2869,12 +2885,14 @@ Sub ReclaimAltDC
 
 	/varset CurrentDC ${FindItemCount[=Diamond Coin]}
 	/varset CurrentDCAC ${Me.AltCurrency[20]}
-	/echo \ayDiamond Coin: Alternate Currency=(\at${CurrentDCAC}\ay) | Inventory=(\at${CurrentDC}\ax)
+	
+	/message ==================================================================
+	/message \ayDiamond Coin: Alternate Currency=(\at${CurrentDCAC}\ay) | Inventory=(\at${CurrentDC}\ax)
 
 	|-----------------------------------------------
 	/if (${CurrentDC}>0) {
 		; --- If I have DC in inventory, RECLAIM it to Alternate Currency !!!
-		/echo \ag$$$\ay I have [\atDiamond Coin\ay]  to reclaim!\ax
+		/message \ag$$$\ay I have [\atDiamond Coin\ay]  to reclaim!\ax
 
 		; Open the Inventory Window if it is closed
 		|----------------------------------------------
@@ -2896,13 +2914,14 @@ Sub ReclaimAltDC
 		/delay 5
 	} else {
 	    ; --- If I have NO DC in inventory to RECLAIM
-		/echo \ag$$$\ay I have \arNO\ay [\atDiamond Coin\ay] to reclaim!\ax
+		/message \ag$$$\ay I have \arNO\ay [\atDiamond Coin\ay] to reclaim!\ax
 	}
 	|-----------------------------------------------
 	; Update the DC and Alternate DC Currency ammount.
 	/varset CurrentDC ${FindItemCount[=Diamond Coin]}
 	/varset CurrentDCAC ${Me.AltCurrency[20]}
-	/echo \ayDiamond Coin: Alternate Currency=(\at${CurrentDCAC}\ay) | Inventory=(\at${CurrentDC}\ax)
+	/message \ayDiamond Coin: Alternate Currency=(\at${CurrentDCAC}\ay) | Inventory=(\at${CurrentDC}\ax)
+	/message ==================================================================
 	; Close the Inventory Window if it is open
 	|----------------------------------------------
 	/if (${Window[InventoryWindow].Open}) /call CloseInvWindow
