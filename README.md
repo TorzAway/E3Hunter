@@ -39,13 +39,13 @@ ReclaimDC=FALSE - (Turn to TRUE to reclaim Diamond Coin)
 ---
 [Camp]
 -
-CampRadius=2500 - [DO NOT ALTER OR EDIT THIS]
+RV_CampRadius=2500 - [DO NOT ALTER OR EDIT THIS]
 ---
-RV_MaxRadius=225 - "How far would you like to target a mob?"
----
-RV_GetMobAtFullHealth=0 - Should mob be at full health when targetted? 0=no 1=yes"
+RV_GetMobAtFullHealth=1 - Should mob be at full health when targetted? 0=no 1=yes"
 ---
 RV_Range=10 - "How far is the combat range?"
+---
+RV_ZRadius=500 - [DO NOT ALTER OR EDIT THIS]
 ---
 RV_MinZRange=-50 - "What is the minimum Z Value of mobs I should target?"
 ---
@@ -55,9 +55,7 @@ RV_FailMax=3 - "How many times should aquire target fail before delaying?"
 ---
 RV_StepValue=25 - "What is the distance value between each radius check (steps) ?"
 ---
-RV_ZonePCCheck=0 - "Should I care if others are in zone?"
----
-RV_SpawnRecheckTimer=10 - "How many seconds to wait for respawns (if none found) ?"
+RV_SpawnRecheckTimer=60 - "How many seconds to wait for respawns (if none found) ?"
 ---
 ---
 [Pull]
