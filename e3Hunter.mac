@@ -1,6 +1,6 @@
 |****************************************************************************************************************
 e3Hunter.mac - by Kroaking
-Last Updated: June 26th, 2024 - 11:33:00 PM
+Last Updated: June 29th, 2024 - 11:15:00 PM
 ****************************************************************************************************************|
 /squelch /log on
 
@@ -165,7 +165,7 @@ Sub Declares
 
 	|==================== DO NOT ALTER THESE VALUES ====================
 	/declare MacroName			string	outer	e3Hunter
-	/declare version			string	outer	1.0.5
+	/declare version			string	outer	1.0.6
 	/declare IniFileName		string	outer	${MacroName}_${Me.CleanName}.ini
 	/declare ZoneDataFileName	string	outer	${MacroName}_ZoneData.ini
 	/declare FirstRun			int		outer	0
@@ -1227,9 +1227,10 @@ Sub DoSinglePull_Name(string Enemy)
   
   /echo \ayAttempting to Read Section \ag"${SectionName}"\ay Zone Information from \at${FileName}\ay...
   /delay 1s
+
   |------------------------------------------------------
   /if (!${Ini[${FileName},${SectionName}].Length}) {
-    /echo "${SectionName}" is not a Valid Section for FILE:${FileName}, ending macro...
+    /message \ao"(\ar${SectionName}\ao)"\ax \ayis not a Valid Section for\ax \agFILE\ao:\at${FileName}\ay, ending macro...\ax
     /delay 1s
     /return
   }
@@ -1333,7 +1334,7 @@ Sub LocPullStepMove(string LocPull_Step)
             /varset mStrLoc (${mNavLocX} ${mNavLocY})
         }
 		 |-------------------------
-		/varset SpawnsAtStep ${SpawnCount[npc loc ${mNavLocX} ${mNavLocY} radius 35]}
+		/varset SpawnsAtStep ${SpawnCount[npc loc ${mNavLocX} ${mNavLocY} radius 40]}
 		|/echo SpawnsAtStep=(${SpawnsAtStep})
 		|/echo  mStrLoc=(${mStrLoc}) | mNavLocY=(${mNavLocY}) | mNavLocYX(${mNavLocX})
 		|------------------------------------------
@@ -1397,7 +1398,7 @@ Sub LocPullStepMove(string LocPull_Step)
 				/call IniChange "Zone" "LastLoc_Step" ${x}
 				|-------------------------------------------------------------------------------------------------------
 			} else {
-				/echo  \ao - STEP: \ay[\am${x}\ay] of \ay[\am${LocalStepArray_${Zone.ShortName}_1.Size}\ay] has [\at${SpawnsAtStep}\ay] spawns, \arSKIPPING\ax \ao!!!\ax
+				/echo  \ao - STEP: \ay[\am${x}\ay] of \ay[\am${RV_LocArray.Size}\ay] has [\at${SpawnsAtStep}\ay] spawns, \arSKIPPING\ax \ao!!!\ax
 				|-------------------------------------------------------------------------------------------------------
 				|- WRITE: LastLoc_Zone and LastLoc_Step to ini file, to pickup at this point if we break macro.
 				|-------------------------------------------------------------------------------------------------------
@@ -1466,7 +1467,7 @@ Sub ReturnToCamp
 	/message ==================================================================
 	/message \ag+++\ax \aoCompleted \ar${HuntMethod} \agCycle:\ax \ao...\ax \atRETURNING TO CAMP !!!\ax
 	/message ==================================================================
-	/e3bcaa /nav loc ${CampReturnLoc}
+	/squelch /e3bcaa /nav loc ${CampReturnLoc}
 	/delay 5
 	
 	|------------------
@@ -1494,15 +1495,11 @@ Sub WaitForSpawns
 	/message ==================================================================
 
 	|-----------------------------------------------
-	/while (!${Me.Combat} && !${Me.XTarget[1].ID}) {
-		|--------------------------------------------
-		/if (!${Me.Combat} && !${Me.XTarget[1].ID}) {
-			/delay ${RV_SpawnRecheckTimer}s
-		} else {
-			/call DoClearTargets
-			/return
-		}
-		|--------------------------------------------
+	/if (!${Me.Combat} && !${Me.XTarget[1].ID}) {
+		/delay ${RV_SpawnRecheckTimer}s
+	} else {
+		/call DoClearTargets
+		/return
 	}
 	|-----------------------------------------------
 	
