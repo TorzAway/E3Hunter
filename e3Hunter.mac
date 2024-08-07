@@ -1,6 +1,6 @@
 |****************************************************************************************************************
 e3Hunter.mac - by Kroaking
-Last Updated: June 30th, 2024 - 12:23:00 PM
+Last Updated: August 7th, 2024 - 01:02:00 PM
 ****************************************************************************************************************|
 /squelch /log on
 
@@ -165,7 +165,7 @@ Sub Declares
 
 	|==================== DO NOT ALTER THESE VALUES ====================
 	/declare MacroName			string	outer	e3Hunter
-	/declare version			string	outer	1.0.7
+	/declare version			string	outer	1.0.8
 	/declare IniFileName		string	outer	${MacroName}_${Me.CleanName}.ini
 	/declare ZoneDataFileName	string	outer	${MacroName}_ZoneData.ini
 	/declare FirstRun			int		outer	0
@@ -2251,8 +2251,8 @@ Sub GroupWait
 | --------------------------------------------------------------------------------------------
 Sub GroupWaitTimer
 	/if (${Debugging}) /echo Sub GroupWaitTimer Entry
-	/if (${GroupWaitTimer}==12) /varset GroupWaitTimer 0
-	/if (${GroupWaitTimer}==10) {
+	/if (${GroupWaitTimer}==8) /varset GroupWaitTimer 0
+	/if (${GroupWaitTimer}==5) {
 		/echo \ayA Group Member might be stuck!
 		/squelch /e3bcaa /stand
 		/squelch /e3bcaa /removelev
@@ -2261,13 +2261,22 @@ Sub GroupWaitTimer
 		/delay 3s
 		/squelch /e3bcaa /keypress back
 	}
-	/if (${GroupWaitTimer}==11) {
+	/if (${GroupWaitTimer}==6) {
 		/echo \ayA Group Member is stuck!
 		/squelch /e3bcaa /moveto loc ${Me.Y} ${Me.X} ${Me.Z}
 		/squelch /e3bcaa /keypress forward hold
 		/delay 2s
 		/squelch /e3bcaa /keypress forward
 		/delay 2s
+	}
+	|--- Use Wayfarers Brotherhood Emblem' to COTH the group.
+	/if (${GroupWaitTimer}==7 && ${FindItemCount[Wayfarers Brotherhood Emblem]}>0) {
+		/echo \ayA Group Member is stuck, Attempting to CoH !!!
+		/delay 1s
+		/coth group
+		/delay 1s
+		/call CheckCasting
+		/delay 5
 	}
 	/if (${Debugging}) /echo Sub GroupWaitTimer Exit
 /return GroupWaitTimer
