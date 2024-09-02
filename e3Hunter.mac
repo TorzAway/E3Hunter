@@ -1,6 +1,8 @@
 |****************************************************************************************************************
 e3Hunter.mac - by Kroaking
-Last Updated: August 7th, 2024 - 01:02:00 PM
+Last Updated: September 2nd, 2024 - 08:59:00 AM
+
+v1.0.9
 ****************************************************************************************************************|
 /squelch /log on
 
@@ -165,7 +167,7 @@ Sub Declares
 
 	|==================== DO NOT ALTER THESE VALUES ====================
 	/declare MacroName			string	outer	e3Hunter
-	/declare version			string	outer	1.0.8
+	/declare version			string	outer	1.0.9
 	/declare IniFileName		string	outer	${MacroName}_${Me.CleanName}.ini
 	/declare ZoneDataFileName	string	outer	${MacroName}_ZoneData.ini
 	/declare FirstRun			int		outer	0
@@ -1225,12 +1227,12 @@ Sub DoSinglePull_Name(string Enemy)
 | --------------------------------------------------------------------------------------------------
   Sub ReadINIfile(FileName,SectionName,ArrayType)
   
-  /echo \ayAttempting to Read Section \ag"${SectionName}"\ay Zone Information from \at${FileName}\ay...
+  /echo \ayAttempting to Read Section "[\ag${SectionName}\ay]" Zone Information from \at${FileName}\ay...
   /delay 1s
 
   |------------------------------------------------------
   /if (!${Ini[${FileName},${SectionName}].Length}) {
-    /message \ao"(\ar${SectionName}\ao)"\ax \ayis not a Valid Section for\ax \agFILE\ao:\at${FileName}\ay, ending macro...\ax
+    /message \ao"[\ar${SectionName}\ao]"\ax \ayis not a Valid Section for\ax \agFILE\ao:\at${FileName}\ay, ending macro...\ax
     /delay 1s
     /return
   }
