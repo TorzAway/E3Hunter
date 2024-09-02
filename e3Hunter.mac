@@ -1,8 +1,8 @@
 |****************************************************************************************************************
 e3Hunter.mac - by Kroaking
-Last Updated: September 2nd, 2024 - 08:59:00 AM
+Last Updated: September 2nd, 2024 - 10:12:00 AM
 
-v1.0.9
+v1.1.0
 ****************************************************************************************************************|
 /squelch /log on
 
@@ -167,7 +167,7 @@ Sub Declares
 
 	|==================== DO NOT ALTER THESE VALUES ====================
 	/declare MacroName			string	outer	e3Hunter
-	/declare version			string	outer	1.0.9
+	/declare version			string	outer	1.1.0
 	/declare IniFileName		string	outer	${MacroName}_${Me.CleanName}.ini
 	/declare ZoneDataFileName	string	outer	${MacroName}_ZoneData.ini
 	/declare FirstRun			int		outer	0
@@ -1480,7 +1480,7 @@ Sub ReturnToCamp
 	/if (${ReclaimDC}) /call ReclaimAltDC
 	|------------------
 	
-	/call WaitForSpawns
+	/if (${RV_SpawnRecheckTimer}>0) /call WaitForSpawns
 	
 	/if (${Debugging}) /echo Sub ReturnToCamp Exit
 /return
@@ -1499,9 +1499,9 @@ Sub WaitForSpawns
 	|-----------------------------------------------
 	/if (!${Me.Combat} && !${Me.XTarget[1].ID}) {
 		/delay ${RV_SpawnRecheckTimer}s
-	} else {
 		/call DoClearTargets
-		/return
+	} else {
+		/call DoClearTargets		
 	}
 	|-----------------------------------------------
 	
