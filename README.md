@@ -32,6 +32,8 @@ LootCorpse=TRUE - (Turn to TRUE to Loot corpses)
 ---
 LootMethod=DCONLY - (OPTIONS: DCONLY to loot Diamond Coin and HIGH VALUE stackable items / E3 to have E3 system handle all looting)
 ---
+NoDropGankItems - (List of NO DROP items your group should loot!)
+---
 MinItemValue - (What is the minumum valuie in plat an item should sell for to loot it?)
 ---
 ReclaimDC=FALSE - (Turn to TRUE to reclaim Diamond Coin)
