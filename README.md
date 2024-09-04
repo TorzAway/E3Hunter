@@ -32,7 +32,8 @@ LootCorpse=TRUE - (Turn to TRUE to Loot corpses)
 ---
 LootMethod=DCONLY - (OPTIONS: DCONLY to loot Diamond Coin and HIGH VALUE stackable items / E3 to have E3 system handle all looting)
 ---
-NoDropGankItems - (List of NO DROP items your group should loot!)
+NoDropGankItems - (List of NO DROP items your group should loot! *Separated by comma*)
+EXAMPLE: NoDropGankItems=Crystal-Gemmed Signet,Discolored Signet,Dust-Marred Signet
 ---
 MinItemValue - (What is the minumum valuie in plat an item should sell for to loot it?)
 ---
