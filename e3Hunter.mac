@@ -1,8 +1,8 @@
 |****************************************************************************************************************
 e3Hunter.mac - by Kroaking
-Last Updated: September 3rd, 2024 - 10:05:00 PM
+Last Updated: September 4th, 2024 - 10:48:00 AM
 
-v1.1.1
+v1.1.2
 ****************************************************************************************************************|
 /squelch /log on
 
@@ -168,7 +168,7 @@ Sub Declares
 
 	|==================== DO NOT ALTER THESE VALUES ====================
 	/declare MacroName			string	outer	e3Hunter
-	/declare version			string	outer	1.1.1
+	/declare version			string	outer	1.1.2
 	/declare IniFileName		string	outer	${MacroName}_${Me.CleanName}.ini
 	/declare ZoneDataFileName	string	outer	${MacroName}_ZoneData.ini
 	/declare FirstRun			int		outer	0
@@ -2054,7 +2054,7 @@ Sub Zoning
   |-----------------------------------------------------------------
   |-- After corpse has been checked, do GroupGankNoDrop if required.
   |-----------------------------------------------------------------
-  /if (${DoGroupGankNoDrop}) /call GroupGankNoDrop ${NoDropMobID}
+  /if (${DoGroupGankNoDrop}) /call GroupGankNoDrop ${NoDropMobID} "${NoDropMobItem}"
   |-----------------------------------------------------------------
   
   |-------------------------------------------------------------------------------------
@@ -2068,8 +2068,10 @@ Sub Zoning
 | --------------------------------------------------------------------------------------------
 | SUB: GroupGankNoDrop
 | --------------------------------------------------------------------------------------------
-  Sub GroupGankNoDrop(GankMob_ID)
+  Sub GroupGankNoDrop(int GankMob_ID, string GankMob_Item)
   /if (${Debugging}) /echo Sub GroupGankNoDrop Entry
+   
+	|/echo GankMob_ID=(${GankMob_ID}) | GankMob_Item=(${GankMob_Item})
   
 	/declare NextGankLoot_Member int inner 0
   
@@ -2083,7 +2085,7 @@ Sub Zoning
 		|------------------------------------------------------------------------------------------------------------
 		|-- DO MY LOOT PASS SHIT HERE	
 		|------------------------------------------------------------------------------------------------------------			
-		/echo \at+\ax \agI am set to collect a\ax \ay(\at${NoDropMobItem}\ay)\ag.
+		/echo \at+\ax \agI am set to collect a\ax \ay(\at${GankMob_Item}\ay)\ag.
 		
 		/hidecorpse none
 		/delay 1s
@@ -2103,11 +2105,11 @@ Sub Zoning
 		|-- DO MY LOOT PASS SHIT HERE	
 		|------------------------------------------------------------------------------------------------------------			
 	} else {
-		/echo \at+\ax \agNext person set to collect a\ax \ay(\at${NoDropMobItem}\ay) \ag is \ay(\at${Group.Member[${LastGankLoot_Member}].CleanName}\ay)\ax.
+		/echo \at+\ax \agNext person set to collect a\ax \ay(\at${GankMob_Item}\ay)\ag is \ay(\at${Group.Member[${LastGankLoot_Member}].CleanName}\ay)\ax.
 		|------------------------------------------------------------------------------------------------------------
 		|-- DO OTHER MEMBER LOOT PASS SHIT HERE	
 		|------------------------------------------------------------------------------------------------------------
-		/echo \agTelling \ay(\at${Group.Member[${LastGankLoot_Member}].CleanName}\ay) to loot \ay(\atMOBID:${GankMob_ID}\ay)
+		/echo \agTelling \ay(\at${Group.Member[${LastGankLoot_Member}].CleanName}\ay)\ag to loot \ay(\at${GankMob_Item}\ay)\ag off of \ay(\atMOBID:${GankMob_ID}\ay)\ag.
 	
 		/squelch /e3bct ${Group.Member[${LastGankLoot_Member}].CleanName} /multi ; /afollow off ; /nav stop ; /stand
 		/delay 1s
