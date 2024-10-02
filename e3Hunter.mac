@@ -1,8 +1,8 @@
 |****************************************************************************************************************
 e3Hunter.mac - by Kroaking
-Last Updated: September 4th, 2024 - 10:48:00 AM
+October 2nd, 2024 - 12:58:00 AM
 
-v1.1.2
+v1.1.3
 ****************************************************************************************************************|
 /squelch /log on
 
@@ -806,7 +806,7 @@ Sub Combat
 					/for i 1 to ${Me.NumGems}
 						/if (!${Me.XTarget}) /break
 						/if (${Me.Gem[${i}].ID}) {
-							/if (${Me.Gem[${i}].TargetType.Equal[Single]} && ${Me.Gem[${i}].SpellType.Equal[Detrimental]} !${Target.Buff[${Me.Gem[${i}].Name}].ID}) {
+							/if (${Me.Gem[${i}].TargetType.Equal[Single]} && ${Me.Gem[${i}].SpellType.Equal[Detrimental]} && !${Target.Buff[${Me.Gem[${i}].Name}].ID}) {
 								/cast ${i}
 								/delay 3s ${Me.Casting.ID}
 								/echo \agCasting \am${Me.Gem[${i}]} \aw--> \ar${Target.CleanName}
