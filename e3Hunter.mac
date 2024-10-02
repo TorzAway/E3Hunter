@@ -2,7 +2,7 @@
 e3Hunter.mac - by Kroaking
 October 2nd, 2024 - 12:58:00 AM
 
-v1.1.3
+v1.1.4
 ****************************************************************************************************************|
 /squelch /log on
 
@@ -567,6 +567,7 @@ Sub DoSinglePull_Any(string Enemy)
 		/echo \arAttacking \ay[\apAnything I can get my grubby paws on\ay]\ar.
 		/varset reportTarget ${reportTarget.OriginalValue}
 		/if (${myTargetID} && !${Target.Type.Equal[corpse]}) {
+		/if (${myTargetID} && !${Target.Type.Equal[Corpse]} && !${Target.Type.Equal[Pet]} && !${Target.Type.Equal[PC]}) {
 		/if (${Spawn[id ${Target.ID}].Distance} > 30) /squelch /nav id ${Target.ID}
 		/if (${Me.XTarget[1].ID} && ${Spawn[id ${Target.ID}].Distance} < 30) {
 				/if (${Target.ID}) /face
