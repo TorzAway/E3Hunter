@@ -1639,6 +1639,7 @@ Sub DoLocPull
 Sub NavToLoc(int Y,int X,int Z)
 	/if (${Debugging}) /echo Entering Sub NavToLoc for ${Y} ${X} ${Z} at Line: ${Macro.CurLine}
 	/varset GroupWaitTimer 0
+	/echo \at -- NavToLoc \ay[\amNo Combat & Agro aware movement\ay] \atto \ay[\am${Y} ${X} ${Z}\ay]\at.
 	|-------------------------------------------------------------------------------
 	/while (${Math.Distance[${Me.Y}, ${Me.X}, ${Me.Z}: ${Y}, ${X}, ${Z}]} > 30) {
 		/if (${Navigation.Active}) {
@@ -1686,6 +1687,7 @@ Sub NavToLoc(int Y,int X,int Z)
 Sub NavToLoc2(int Y,int X,int Z)
 	/if (${Debugging}) /echo Entering Sub NavToLoc2 for ${Y} ${X} ${Z} at Line: ${Macro.CurLine}
 	/varset GroupWaitTimer 0
+	/echo \at -- NavToLoc2 \ay[\amCombat & Agro aware movement\ay] \atto \ay[\am${Y} ${X} ${Z}\ay]\at.
 	/while (${Math.Distance[${Me.Y}, ${Me.X}, ${Me.Z}: ${Y}, ${X}, ${Z}]} > 20) {
 		/if (${Navigation.Active}) {
 			/if (${Debugging}) /echo WaitNav Moving ELSE
@@ -1749,11 +1751,12 @@ Sub NavToLoc2(int Y,int X,int Z)
 | --------------------------------------------------------------------------------------------
 Sub WaitNav(NavTargetID)
 	/if (${Debugging}) /echo \agEntering Sub WaitNav for ${Spawn[id ${NavTargetID}].Y} ${Spawn[id ${NavTargetID}].X} ${Spawn[id ${NavTargetID}].Z} at Line: ${Macro.CurLine}
+	/echo \at -- WaitNav \ay[\amNo Combat & Agro aware movement\ay] \atto mob id:\ay[\am${NavTargetID}\ay]\at.
 	/if (!${Spawn[id ${NavTargetID}].ID}) {
 		/delay 5s
 		/return
 	}
-	/while (${Spawn[id ${NavTargetID}].Distance} > ${If[${PullAbilityRange},${PullAbilityRange},30]} || !${Spawn[${myTargetID}].LineOfSight}) {
+	/while (${Spawn[id ${NavTargetID}].Distance} > 30 || !${Spawn[${myTargetID}].LineOfSight}) {
 		/if (!${Spawn[id ${NavTargetID}].ID}) {
 			/delay 5s
 			/return
@@ -1769,7 +1772,7 @@ Sub WaitNav(NavTargetID)
 				/if (${Navigation.Active}) /nav stop
 				/varset NavTargetID ${Me.XTarget[1].ID}
 				/if (${Debugging}) /echo CALL FARM STUFF WaitNAV
-				/call DoSinglePull
+				/call DoSingleMob
 			} else {
 				/if (${Debugging}) /echo \ayWaitNav Moving
 				/if (${CheckBots}) /call GroupDeathChk
@@ -1778,27 +1781,29 @@ Sub WaitNav(NavTargetID)
 				/call GMCheck
 			}
 			/if (${Me.Combat} && !${Me.XTarget[1].ID}) /squelch /target clear
-			/if (!${courseCorrection}) {				
+			/if (!${courseCorrection}) {
 				|------  ALL GO TO TARGET - staggered
-				/if (!${Me.Moving} && !${Me.Combat} && !${Me.XTarget[1].ID}) {
-					/squelch /nav id ${NavTargetID}
-					/delay 5
-					/squelch /e3bca /nav id ${NavTargetID}		
-				}
+				/nav id ${NavTargetID}
+				/delay 5
+				/squelch /e3bca /nav id ${NavTargetID}
 				|------  ALL GO TO TARGET - staggered
 				/varset courseCorrection ${courseCorrection.OriginalValue}
 			}
+			|----------------------------------
+			| Should group come to me on pulls. 
+			|----------------------------------
 			/if (${GroupNavToMe}) {
                 /call Group2Me
             }
+			|----------------------------------
 			/delay 10
 		} else {
 			/if (${Me.XTarget[1].ID}) {
 				/if (${Navigation.Active}) /nav stop
 				/e3bcga /target id ${Me.XTarget[1].ID}
 				/varset NavTargetID ${Me.XTarget[1].ID}
-				/if (${Debugging}) /echo CALL DoSinglePull WaitNav II
-				/call DoSinglePull
+				/if (${Debugging}) /echo CALL DoSingleMob WaitNav II
+				/call DoSingleMob
 			} else {
 				/varcalc BackUpTimer (${BackUpTimer})+1
 				/if (${BackUpTimer}>7) {
@@ -1817,7 +1822,7 @@ Sub WaitNav(NavTargetID)
 				/if (${CheckBots}) /call GroupEndChk
 			}
 			/if (${Me.Combat} && !${Me.XTarget[1].ID}) /squelch /target clear
-			/if (!${Me.Moving} && !${Me.Combat} && !${Me.XTarget[1].ID}) /squelch /nav id ${NavTargetID}
+			/squelch /nav id ${NavTargetID}
 		}
 	}
 	/if (${Navigation.Active}) /nav stop
