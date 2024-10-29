@@ -1,8 +1,8 @@
 |****************************************************************************************************************
 e3Hunter.mac - by Kroaking
-October 2nd, 2024 - 12:58:00 AM
+Last Updated: October 29th, 2024 - 08:40:00 AM
 
-v1.1.4
+v1.1.5
 ****************************************************************************************************************|
 /squelch /log on
 
@@ -168,7 +168,7 @@ Sub Declares
 
 	|==================== DO NOT ALTER THESE VALUES ====================
 	/declare MacroName			string	outer	e3Hunter
-	/declare version			string	outer	1.1.2
+	/declare version			string	outer	1.1.5
 	/declare IniFileName		string	outer	${MacroName}_${Me.CleanName}.ini
 	/declare ZoneDataFileName	string	outer	${MacroName}_ZoneData.ini
 	/declare FirstRun			int		outer	0
@@ -1922,15 +1922,27 @@ Sub Zoning
 	/keypress back
 	/fastdrop on
 	/lootn never
-	/delay 1s
+	/delay 5
 	|---------------------------------------
 	| -- Let E3 Looting System handle this !
 	|---------------------------------------
-	/loot
+	|---------------------------------------
+	| -- HANDLE CONDITIONALY !
+	|---------------------------------------
+	/if (!${Me.XTarget[1].ID}) {
+		/loot
+	} else {
+		/call DoClearTargets
+	}
+	|---------------------------------------
+	| -- HANDLE CONDITIONALY !
+	|---------------------------------------
 	|---------------------------------------
 	| -- Let E3 Looting System handle this !
 	|---------------------------------------
-	/delay 1s
+	|--------------------------------------------
+	/if (${Me.XTarget[1].ID}) /call DoClearTargets
+	|--------------------------------------------
 	/doevents
 	|-------------------------------------------------------------------------------------
 	/if (!${Me.XTarget[1].ID} && !${Me.Casting.ID} && !${Me.Moving}) /call CheckIfBagsFull
@@ -1963,7 +1975,11 @@ Sub Zoning
 	|---------------------------------------
 	| -- HANDLE CONDITIONALY !
 	|---------------------------------------
-	/loot
+	/if (!${Me.XTarget[1].ID}) {
+		/loot
+	} else {
+		/call DoClearTargets
+	}
 	|---------------------------------------
 	| -- HANDLE CONDITIONALY !
 	|---------------------------------------
@@ -2048,6 +2064,9 @@ Sub Zoning
 			}
 			|--------------------------------------------------------
 		/doevents
+		|--------------------------------------------
+		/if (${Me.XTarget[1].ID}) /call DoClearTargets
+		|--------------------------------------------		
 		/next LootSlot
 		|---------------------------------------
     }
@@ -2055,6 +2074,9 @@ Sub Zoning
 
   /notify LootWnd DoneButton leftmouseup
   /delay 2s !${Window[LootWnd].Open}
+  |--------------------------------------------
+  /if (${Me.XTarget[1].ID}) /call DoClearTargets
+  |--------------------------------------------
   /doevents
 
   |-----------------------------------------------------------------
