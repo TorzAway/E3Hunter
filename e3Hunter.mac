@@ -1,8 +1,8 @@
 |****************************************************************************************************************
 e3Hunter.mac - by Kroaking
-Last Updated: November 1st, 2024 - 07:57:00 AM
+Last Updated: November 4th, 2024 - 03:43:00 PM
 
-v1.1.6
+v1.1.7
 ****************************************************************************************************************|
 /squelch /log on
 
@@ -168,7 +168,7 @@ Sub Declares
 
 	|==================== DO NOT ALTER THESE VALUES ====================
 	/declare MacroName			string	outer	e3Hunter
-	/declare version			string	outer	1.1.6
+	/declare version			string	outer	1.1.7
 	/declare IniFileName		string	outer	${MacroName}_${Me.CleanName}.ini
 	/declare ZoneDataFileName	string	outer	${MacroName}_ZoneData.ini
 	/declare FirstRun			int		outer	0
@@ -1697,17 +1697,18 @@ Sub NavToLoc2(int Y,int X,int Z)
 			/call GMCheck
 			/if (${Me.XTarget[1].ID}) {
 				/if (${Navigation.Active}) /nav stop
-				/if (${Debugging}) /echo CALL DoSinglePull NavToLoc
-				|------  CALL GROUP TO ME To FIGHT
-				/call Group2Me
-				|------  CALL GROUP TO ME To FIGHT							
+				/if (${Debugging}) /echo CALL DoSinglePull NavToLoc	
 				/target ${Me.XTarget[1].ID}
 				/if (${Spawn[id ${Target.ID}].Distance} > 30) /squelch /nav id ${Target.ID}
 				/if (${Me.XTarget[1].ID} && ${Spawn[id ${Target.ID}].Distance} < 30) {
+					|------  CALL GROUP TO ME To FIGHT
+					/call Group2Me
+					|------  CALL GROUP TO ME To FIGHT									
 					/if (${Target.ID}) /face
 					/if (${Bool[${Plugin[MQ2Melee]}]}) /squelch /killthis
 					/squelch /attack on
 					/call DoClearTargets
+					/call CheckForCorpses
 					/doevents
 					/if (${UseClickDamage}) /call Clickies_Damage
 				}
@@ -1724,16 +1725,17 @@ Sub NavToLoc2(int Y,int X,int Z)
 			/if (${Me.XTarget[1].ID}) {
 				/if (${Navigation.Active}) /nav stop
 				/if (${Debugging}) /echo CALL FARM STUFF NavToLoc II
-				|------  CALL GROUP TO ME To FIGHT
-				/call Group2Me
-				|------  CALL GROUP TO ME To FIGHT					
 				/target ${Me.XTarget[1].ID}
 				/if (${Spawn[id ${Target.ID}].Distance} > 30) /squelch /nav id ${Target.ID}
 				/if (${Me.XTarget[1].ID} && ${Spawn[id ${Target.ID}].Distance} < 30) {
+				|------  CALL GROUP TO ME To FIGHT
+				/call Group2Me
+				|------  CALL GROUP TO ME To FIGHT				
 				/if (${Target.ID}) /face
 				/if (${Bool[${Plugin[MQ2Melee]}]}) /squelch /killthis
 				/squelch /attack on
 				/call DoClearTargets
+				/call CheckForCorpses
 				/doevents
 				/if (${UseClickDamage}) /call Clickies_Damage
 			}
