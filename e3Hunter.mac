@@ -1696,6 +1696,7 @@ Sub NavToLoc2(int Y,int X,int Z)
 			/if (${CheckBots}) /call GroupEndChk
 			/call GMCheck
 			/if (${Me.XTarget[1].ID}) {
+				/popcustom 13 5 ---> GOT AGGRO ON ROUTE <---
 				/if (${Navigation.Active}) /nav stop
 				/if (${Debugging}) /echo CALL DoSinglePull NavToLoc	
 				/target ${Me.XTarget[1].ID}
@@ -1723,6 +1724,7 @@ Sub NavToLoc2(int Y,int X,int Z)
 			/delay 10
 		} else {
 			/if (${Me.XTarget[1].ID}) {
+				/popcustom 13 5 ---> GOT AGGRO ON ROUTE <---
 				/if (${Navigation.Active}) /nav stop
 				/if (${Debugging}) /echo CALL FARM STUFF NavToLoc II
 				/target ${Me.XTarget[1].ID}
