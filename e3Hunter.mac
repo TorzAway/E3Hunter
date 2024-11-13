@@ -1,8 +1,8 @@
 |****************************************************************************************************************
 e3Hunter.mac - by Kroaking
-Last Updated: November 4th, 2024 - 03:43:00 PM
+Last Updated: November 13th, 2024 - 10:59:00 AM
 
-v1.1.7
+v1.1.8
 ****************************************************************************************************************|
 /squelch /log on
 
@@ -168,7 +168,7 @@ Sub Declares
 
 	|==================== DO NOT ALTER THESE VALUES ====================
 	/declare MacroName			string	outer	e3Hunter
-	/declare version			string	outer	1.1.7
+	/declare version			string	outer	1.1.8
 	/declare IniFileName		string	outer	${MacroName}_${Me.CleanName}.ini
 	/declare ZoneDataFileName	string	outer	${MacroName}_ZoneData.ini
 	/declare FirstRun			int		outer	0
@@ -477,14 +477,14 @@ Sub DoClearTargets
 		/delay 5
 		|/keypress º
 		/delay 5
-		/ClearTargets
+		/ClearTargets stick
 		:gotoloopkeepfighting
 		/if (${Me.Sitting}) /stand
 		/if (!${Target.ID} && ${Me.XTarget[1].ID}) {
 			/squelch /e3bca /nav id ${Me.ID}
 			|/keypress º
 			/delay 5
-			/ClearTargets
+			/ClearTargets stick
 			/delay 20
 			/xtarget set 1 ${Me.Name}
 			/delay 3
@@ -495,13 +495,12 @@ Sub DoClearTargets
 			/squelch /e3bca /nav id ${Me.ID}
 			|/keypress º
 			/delay 5
-			/ClearTargets
+			/ClearTargets stick
 			/keypress esc
 			/delay 20
 			}
 		/if (${Target.Type.Find[corpse]}) {
 			/keypress esc
-			/ClearTargets stick
 			}
 		/if (${Target.Distance.Int} > 20) /stick 15
 		|-------------------------------------------------------------------
