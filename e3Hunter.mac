@@ -980,11 +980,11 @@ Sub DoSinglePull_Name(string Enemy)
 			/if (${Navigation.PathExists[id ${Target.ID}]}) {
 				/squelch /nav id ${Target.ID} 
 				/delay 7
-				/squelch /e3bcza /nav id ${Target.ID} 
+				/squelch /e3bcgza /nav id ${Target.ID} 
 			} else {
 				/squelch /moveto id ${Target.ID} mdist 10			
 				/delay 7
-				/squelch /e3bcza /moveto id ${Target.ID} mdist 10
+				/squelch /e3bcgza /moveto id ${Target.ID} mdist 10
 			}
 			|-----
 		}
@@ -1385,7 +1385,7 @@ Sub LocPullStepMove(string LocPull_Step)
 					|----------------------------------------------
 					/squelch /nav loc ${TempSpawnPull_Loc}
 					/delay 7
-					/squelch /e3bcza /nav loc ${TempSpawnPull_Loc}
+					/squelch /e3bcgza /nav loc ${TempSpawnPull_Loc}
 					|----------------------------------------------
 				}
 				|------------------------------
@@ -1668,7 +1668,7 @@ Sub NavToLoc(int Y,int X,int Z)
 			}
 			/if (${Me.Combat} && !${Me.XTarget[1].ID}) /squelch /target clear
 			/if (!${Me.Combat} && !${Me.XTarget[1].ID}) /call Group2Me
-			/if (!${Me.Moving}) /squelch /e3bcza /nav loc ${Y} ${X} ${Z}
+			/if (!${Me.Moving}) /squelch /e3bcgza /nav loc ${Y} ${X} ${Z}
 			/delay 5 ${Me.Moving}
 			/delay 5 ${Navigation.Active}
 		}
@@ -1744,7 +1744,7 @@ Sub NavToLoc2(int Y,int X,int Z)
 				/if (${CheckBots}) /call GroupDeathChk
 			}
 			/if (${Me.Combat} && !${Me.XTarget[1].ID}) /squelch /target clear
-			/if (!${Me.Moving} && !${Me.Combat} && !${Me.XTarget[1].ID}) /squelch /e3bcza /nav loc ${Y} ${X} ${Z}
+			/if (!${Me.Moving} && !${Me.Combat} && !${Me.XTarget[1].ID}) /squelch /e3bcgza /nav loc ${Y} ${X} ${Z}
 			/delay 5 ${Me.Moving}
 			/delay 5 ${Navigation.Active}
 		}
@@ -1809,7 +1809,7 @@ Sub WaitNav(NavTargetID)
 		} else {
 			/if (${Me.XTarget[1].ID}) {
 				/if (${Navigation.Active}) /nav stop
-				/e3bcza /target id ${Me.XTarget[1].ID}
+				/e3bcgza /target id ${Me.XTarget[1].ID}
 				/varset NavTargetID ${Me.XTarget[1].ID}
 				/if (${Debugging}) /echo CALL DoSingleMob WaitNav II
 				/call DoSingleMob
