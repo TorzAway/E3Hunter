@@ -1,8 +1,8 @@
 |****************************************************************************************************************
 e3Hunter.mac - by Kroaking
-Last Updated: January 3rd, 2025 - 09:51:00 PM
+Last Updated: January 8th, 2025 - 10:39:00 AM
 
-v1.2.1
+v1.2.2
 
 ****************************************************************************************************************|
 /squelch /log on
@@ -169,7 +169,7 @@ Sub Declares
 
 	|==================== DO NOT ALTER THESE VALUES ====================
 	/declare MacroName			string	outer	e3Hunter
-	/declare version			string	outer	1.2.1
+	/declare version			string	outer	1.2.2
 	/declare IniFileName		string	outer	${MacroName}_${Me.CleanName}.ini
 	/declare ZoneDataFileName	string	outer	${MacroName}_ZoneData.ini
 	/declare FirstRun			int		outer	0
@@ -1639,7 +1639,7 @@ Sub DoLocPull
 Sub NavToLoc(int Y,int X,int Z)
 	/if (${Debugging}) /echo Entering Sub NavToLoc for ${Y} ${X} ${Z} at Line: ${Macro.CurLine}
 	/varset GroupWaitTimer 0
-	/message \at -- NavToLoc \ay[\amNo Combat & Agro aware movement\ay] \atto \ay[\am${Y} ${X} ${Z}\ay]\at.
+	/message \at-- NavToLoc \ay[\amNo Combat & Agro aware movement\ay] \atto \ay[\am${Y} ${X} ${Z}\ay]\at.
 	|-------------------------------------------------------------------------------
 	/while (${Math.Distance[${Me.Y}, ${Me.X}, ${Me.Z}: ${Y}, ${X}, ${Z}]} > 30) {
 		/if (${Navigation.Active}) {
@@ -1687,7 +1687,7 @@ Sub NavToLoc(int Y,int X,int Z)
 Sub NavToLoc2(int Y,int X,int Z)
 	/if (${Debugging}) /echo Entering Sub NavToLoc2 for ${Y} ${X} ${Z} at Line: ${Macro.CurLine}
 	/varset GroupWaitTimer 0
-	/message \at -- NavToLoc2 \ay[\amCombat & Agro aware movement\ay] \atto \ay[\am${Y} ${X} ${Z}\ay]\at.
+	/message \at-- NavToLoc2 \ay[\amCombat & Agro aware movement\ay] \atto \ay[\am${Y} ${X} ${Z}\ay]\at.
 	/while (${Math.Distance[${Me.Y}, ${Me.X}, ${Me.Z}: ${Y}, ${X}, ${Z}]} > 20) {
 		/if (${Navigation.Active}) {
 			/if (${Debugging}) /echo WaitNav Moving ELSE
@@ -1699,7 +1699,7 @@ Sub NavToLoc2(int Y,int X,int Z)
 				/popcustom 13 5 ---> GOT AGGRO ON ROUTE <---
 				/if (${Navigation.Active}) /nav stop
 				/if (${Debugging}) /echo CALL DoSinglePull NavToLoc	
-				/target ${Me.XTarget}
+				/target ${Me.XTarget[1].ID}
 				/if (${Spawn[id ${Target.ID}].Distance} > 30) /squelch /nav id ${Target.ID}
 				/if (${Me.XTarget} && ${Spawn[id ${Target.ID}].Distance} < 30) {
 					|------  CALL GROUP TO ME To FIGHT
@@ -1727,7 +1727,7 @@ Sub NavToLoc2(int Y,int X,int Z)
 				/popcustom 13 5 ---> GOT AGGRO ON ROUTE <---
 				/if (${Navigation.Active}) /nav stop
 				/if (${Debugging}) /echo CALL FARM STUFF NavToLoc II
-				/target ${Me.XTarget}
+				/target ${Me.XTarget[1].ID}
 				/if (${Spawn[id ${Target.ID}].Distance} > 30) /squelch /nav id ${Target.ID}
 				/if (${Me.XTarget} && ${Spawn[id ${Target.ID}].Distance} < 30) {
 				|------  CALL GROUP TO ME To FIGHT
@@ -1761,7 +1761,7 @@ Sub NavToLoc2(int Y,int X,int Z)
 | --------------------------------------------------------------------------------------------
 Sub WaitNav(NavTargetID)
 	/if (${Debugging}) /echo \agEntering Sub WaitNav for ${Spawn[id ${NavTargetID}].Y} ${Spawn[id ${NavTargetID}].X} ${Spawn[id ${NavTargetID}].Z} at Line: ${Macro.CurLine}
-	/message \at -- WaitNav \ay[\amNo Combat & Agro aware movement\ay] \atto mob id:\ay[\am${NavTargetID}\ay]\at.
+	/message \at-- WaitNav \ay[\amNo Combat & Agro aware movement\ay] \atto mob id:\ay[\am${NavTargetID}\ay]\at.
 	/if (!${Spawn[id ${NavTargetID}].ID}) {
 		/delay 5s
 		/return
