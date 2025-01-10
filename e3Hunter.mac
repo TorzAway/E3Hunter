@@ -1,8 +1,8 @@
 |****************************************************************************************************************
 e3Hunter.mac - by Kroaking
-Last Updated: January 10th, 2025 - 12:23:00 AM
+Last Updated: January 10th, 2025 - 02:13:00 PM
 
-v1.2.3
+v1.2.4
 
 ****************************************************************************************************************|
 /squelch /log on
@@ -169,7 +169,7 @@ Sub Declares
 
 	|==================== DO NOT ALTER THESE VALUES ====================
 	/declare MacroName			string	outer	e3Hunter
-	/declare version			string	outer	1.2.3
+	/declare version			string	outer	1.2.4
 	/declare IniFileName		string	outer	${MacroName}_${Me.CleanName}.ini
 	/declare ZoneDataFileName	string	outer	${MacroName}_ZoneData.ini
 	/declare FirstRun			int		outer	0
@@ -1891,7 +1891,7 @@ Sub Zoning
 
   /if (${Target.ID} && ${Target.Type.Equal[Corpse]}) {
     /message \at+++ \ayLooks like we have a corpse to loot!\ax
-    /if (${Target.ID}) /face nolook
+    /if (${Target.ID}) /face fast nolook
 
 	|----------------------------------------------
 	|-----
@@ -1905,7 +1905,12 @@ Sub Zoning
 
 	|-------------------------
 	/call CheckCasting
+	
+	:StopMovingToLoot
 	/delay 5 !${Me.Moving}
+	/if (${Me.Moving}) /goto :StopMovingToLoot
+	/delay 2 !${Me.Moving}
+	
 	|--------------------------------------------------------------------------------
 	/if (!${Me.XTarget} && !${Me.Casting.ID} && !${Me.Moving} && ${LootMethod.Equal[DCONLY]}) /call LootMob_DC_Only
 	/if (!${Me.XTarget} && !${Me.Casting.ID} && !${Me.Moving} && ${LootMethod.Equal[E3]}) /call LootMob_E3
@@ -1927,12 +1932,13 @@ Sub Zoning
   Sub LootMob_E3
 	/if (${Debugging}) /echo Sub LootMob_E3 Entry
 
-	/if (${Target.ID}) /face nolook
+	/if (${Target.ID}) /face fast nolook
 	/keypress forward
 	/keypress back
 	/fastdrop on
 	/lootn never
 	/delay 5
+	
 	|---------------------------------------
 	| -- Let E3 Looting System handle this !
 	|---------------------------------------
@@ -1975,12 +1981,12 @@ Sub Zoning
 	/declare CursorItemValueInPlat	int 	inner	0
 	/declare NoDropMobID			int		inner	0
 	
-	/if (${Target.ID}) /face nolook
+	/if (${Target.ID}) /face fast nolook
     /keypress forward
     /keypress back
     /fastdrop on
     /lootn never
-    /delay 1s
+    /delay 5
 
 	|---------------------------------------
 	| -- HANDLE CONDITIONALY !
@@ -2003,9 +2009,15 @@ Sub Zoning
 	/if (!${Corpse.Items}) {
 		/message \ar- NO LOOT! - Cheap Bastard !
     } else {
-		/delay 1s ${Corpse.Items}!=NULL
+		:PopulateCorpseItems
+		/delay 5 ${Corpse.Items}
+		/if (!${Corpse.Items}) /goto :PopulateCorpseItems
+		
+		:LootThisBitch
 		/varset LootTotal ${Corpse.Items}
 		/message \ay++ Corpse has (\at${LootTotal}\ay) item(s) on it to loot.
+		/delay 1
+		
 		|---------------------------------------
 		/for LootSlot 1 to ${LootTotal}
 			
@@ -2094,19 +2106,28 @@ Sub Zoning
 		|--------------------------------------------
 		/if (${Me.XTarget}) /call DoClearTargets
 		|--------------------------------------------		
-		/delay 1.5
+		/delay 2
 		/next LootSlot
 		|---------------------------------------
     }
     |--------------------------------------
 
-  /notify LootWnd DoneButton leftmouseup
-  /delay 2s !${Window[LootWnd].Open}
-  |--------------------------------------------
-  /if (${Me.XTarget}) /call DoClearTargets
-  |--------------------------------------------
-  /doevents
-
+	|--------------------------------------
+	/if (!${Corpse.Items}) {
+		:CloseCorpseLootWnd
+		/notify LootWnd DoneButton leftmouseup
+		/delay 2 !${Window[LootWnd].Open}
+		/if (${Window[LootWnd].Open}) /goto :CloseCorpseLootWnd  
+	} else {
+		/message \ay++ Corpse has item(s) on it to \arSTILL\ax to loot !!!
+		/goto :LootThisBitch
+	}
+	|--------------------------------------
+	
+    |--------------------------------------------
+    /if (${Me.XTarget}) /call DoClearTargets
+    |--------------------------------------------
+    /doevents
   |-----------------------------------------------------------------
   |-- After corpse has been checked, do GroupGankNoDrop if required.
   |-----------------------------------------------------------------
