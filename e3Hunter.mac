@@ -1,6 +1,6 @@
 |****************************************************************************************************************
 e3Hunter.mac - by Kroaking
-Last Updated: January 10th, 2025 - 06:35:00 AM
+Last Updated: January 10th, 2025 - 12:23:00 AM
 
 v1.2.3
 
@@ -1994,8 +1994,10 @@ Sub Zoning
 	| -- HANDLE CONDITIONALY !
 	|---------------------------------------
 
-    /delay 2s ${Window[LootWnd].Open}
-    /doevents
+	:OpenCorpseLootWnd
+    /delay 2 ${Window[LootWnd].Open}
+	/if (!${Window[LootWnd].Open}) /goto :OpenCorpseLootWnd
+	/doevents
 
 	|--------------------------------------
 	/if (!${Corpse.Items}) {
@@ -2059,14 +2061,16 @@ Sub Zoning
 						/message \at+\ax \agKeeping a\ax \ay(\atDiamond Coin\ay) \ag worth \ay(\at${CursorItemValueInPlat}\ay)\ag platinum ... WOOT!\ax
 						:AutoInvLootItem1
 						/autoinventory 
-						/delay 1 !${Cursor.ID}
+						/delay 2 !${Cursor.ID}
 						/if (${Cursor.ID}) /goto :AutoInvLootItem1
+						/delay 1
 					} else /if (${CursorItemValueInPlat}>=${MinItemValue}) {
 						/message \at+\ax \agKeeping a\ax \ay(\at${Cursor.Name}\ay) \ag worth \ay(\at${CursorItemValueInPlat}\ay)\ag platinum ... WOOT!\ax
 						:AutoInvLootItem2
 						/autoinventory 
-						/delay 1 !${Cursor.ID}
+						/delay 2 !${Cursor.ID}
 						/if (${Cursor.ID}) /goto :AutoInvLootItem2
+						/delay 1
 					}
 				}
 				|--------------------------------------------------------
@@ -2078,8 +2082,9 @@ Sub Zoning
 					/message \ar-\ax \arDestroying a\ax \ay(\at${Cursor.Name}\ay)\ar, that crap is woth less than \ay(\at${MinItemValue}\ay)\ar plat!\ax --(${CursorItemValueInPlat})--
 					:AutoDestLootItem
 					/destroy 
-					/delay 1 !${Cursor.ID}
+					/delay 2 !${Cursor.ID}
 					/if (${Cursor.ID}) /goto :AutoDestLootItem
+					/delay 1
 				}
 				|--------------------------------------------------------			
 			|--- END - LOOT AND HANDLE CURSOR ITEM
@@ -2089,6 +2094,7 @@ Sub Zoning
 		|--------------------------------------------
 		/if (${Me.XTarget}) /call DoClearTargets
 		|--------------------------------------------		
+		/delay 1.5
 		/next LootSlot
 		|---------------------------------------
     }
