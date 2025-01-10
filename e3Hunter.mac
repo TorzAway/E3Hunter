@@ -1,8 +1,8 @@
 |****************************************************************************************************************
 e3Hunter.mac - by Kroaking
-Last Updated: January 8th, 2025 - 10:39:00 AM
+Last Updated: January 10th, 2025 - 06:35:00 AM
 
-v1.2.2
+v1.2.3
 
 ****************************************************************************************************************|
 /squelch /log on
@@ -169,7 +169,7 @@ Sub Declares
 
 	|==================== DO NOT ALTER THESE VALUES ====================
 	/declare MacroName			string	outer	e3Hunter
-	/declare version			string	outer	1.2.2
+	/declare version			string	outer	1.2.3
 	/declare IniFileName		string	outer	${MacroName}_${Me.CleanName}.ini
 	/declare ZoneDataFileName	string	outer	${MacroName}_ZoneData.ini
 	/declare FirstRun			int		outer	0
@@ -2034,10 +2034,16 @@ Sub Zoning
 			} else {
 			|--- BEGIN - LOOT AND HANDLE CURSOR ITEM
 				/message \ay-- Grabbing corpse item (\am${LootSlot}\ax) of (\am${LootTotal}\ax).
-				/nomodkey /shift /itemnotify Loot${LootSlot} leftmouseup
-				/delay 2s ${Cursor.ID}
+				
+				:GetCursorItem
+				/nomodkey /shift /itemnotify Loot${LootSlot} leftmouseup			
+				/delay 1 ${Cursor.ID}
+				/if (!${Cursor.ID}) /goto :GetCursorItem
+			
+				:SelectQuantity
 				/if (${Window[QuantityWnd].Open}) /notify QuantityWnd QTYW_Accept_Button leftmouseup
-				/delay 5
+				/delay 1 !${Window[QuantityWnd].Open}
+				/if (${Window[QuantityWnd].Open}) /goto :SelectQuantity
 	
 				|----------------------------------------------------------------------------------------------
 				/varset CursorItemValueInPlat ${Math.Calc[${FindItem[=${Cursor.Name}].Value}/1000]}
@@ -2051,12 +2057,16 @@ Sub Zoning
 				/if (${Cursor.ID}) {			
 					/if (${Cursor.Name.Equal[Diamond Coin]}) {
 						/message \at+\ax \agKeeping a\ax \ay(\atDiamond Coin\ay) \ag worth \ay(\at${CursorItemValueInPlat}\ay)\ag platinum ... WOOT!\ax
+						:AutoInvLootItem1
 						/autoinventory 
-						/delay 1s !${Cursor.ID}
+						/delay 1 !${Cursor.ID}
+						/if (${Cursor.ID}) /goto :AutoInvLootItem1
 					} else /if (${CursorItemValueInPlat}>=${MinItemValue}) {
 						/message \at+\ax \agKeeping a\ax \ay(\at${Cursor.Name}\ay) \ag worth \ay(\at${CursorItemValueInPlat}\ay)\ag platinum ... WOOT!\ax
+						:AutoInvLootItem2
 						/autoinventory 
-						/delay 1s !${Cursor.ID}
+						/delay 1 !${Cursor.ID}
+						/if (${Cursor.ID}) /goto :AutoInvLootItem2
 					}
 				}
 				|--------------------------------------------------------
@@ -2066,8 +2076,10 @@ Sub Zoning
 				|--------------------------------------------------------
 				/if (${Cursor.ID}) {
 					/message \ar-\ax \arDestroying a\ax \ay(\at${Cursor.Name}\ay)\ar, that crap is woth less than \ay(\at${MinItemValue}\ay)\ar plat!\ax --(${CursorItemValueInPlat})--
-					/destroy
-					/delay 1s !${Cursor.ID}
+					:AutoDestLootItem
+					/destroy 
+					/delay 1 !${Cursor.ID}
+					/if (${Cursor.ID}) /goto :AutoDestLootItem
 				}
 				|--------------------------------------------------------			
 			|--- END - LOOT AND HANDLE CURSOR ITEM
