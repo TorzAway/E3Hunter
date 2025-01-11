@@ -1894,14 +1894,14 @@ Sub Zoning
 
   /if (${Target.ID} && ${Target.Type.Equal[Corpse]}) {
     /message \at+++ \ayLooks like we have a corpse to loot!\ax
-    /if (${Target.ID}) /face fast nolook
+    /face fast nolook
 
 	|----------------------------------------------
 	|-----
 	/if (${Navigation.PathExists[id ${Target.ID}]}) {
-		/if (${Target.ID} && !${Me.Casting.ID}) /nav id ${Target.ID}
+		/if (${Target.ID} && ${Target.Type.Equal[Corpse]} && (${Target.Distance}>10) && !${Me.Casting.ID}) /nav id ${Target.ID}
 	} else {
-		 /if (${Target.ID} && !${Me.Casting.ID}) /moveto id ${Target.ID} mdist 10
+		 /if (${Target.ID} && ${Target.Type.Equal[Corpse]} && (${Target.Distance}>10) && !${Me.Casting.ID}) /moveto id ${Target.ID} mdist 10
 	}
 	|-----
     |----------------------------------------------
@@ -1913,8 +1913,9 @@ Sub Zoning
 	/if (!${Me.XTarget} && !${Me.Casting.ID} && !${Me.Moving} && ${LootMethod.Equal[DCONLY]}) /call LootMob_DC_Only
 	/if (!${Me.XTarget} && !${Me.Casting.ID} && !${Me.Moving} && ${LootMethod.Equal[E3]}) /call LootMob_E3
 	|--------------------------------------------------------------------------------
-
     /squelch /target clear
+	|-------------------------
+	
     /goto :CheckAgain
   } else {
     /message \ar+++ \ayNo corpse(s) found to loot.\ax
@@ -1930,12 +1931,11 @@ Sub Zoning
   Sub LootMob_E3
 	/if (${Debugging}) /echo Sub LootMob_E3 Entry
 
-	/if (${Target.ID}) /face fast nolook
+	/if (${Target.ID} && ${Target.Type.Equal[Corpse]}) /face fast nolook
 	/keypress forward
 	/keypress back
 	/fastdrop on
 	/lootn never
-	/delay 5
 	
 	|---------------------------------------
 	| -- Let E3 Looting System handle this !
@@ -1979,12 +1979,11 @@ Sub Zoning
 	/declare CursorItemValueInPlat	int 	inner	0
 	/declare NoDropMobID			int		inner	0
 	
-	/if (${Target.ID}) /face fast nolook
+	/if (${Target.ID} && ${Target.Type.Equal[Corpse]}) /face fast nolook
     /keypress forward
     /keypress back
     /fastdrop on
     /lootn never
-    /delay 5
 
 	|---------------------------------------
 	| -- HANDLE CONDITIONALY !
@@ -1999,12 +1998,8 @@ Sub Zoning
 	|---------------------------------------
 
 	|-------------------------------------
-    /delay 2s ${Window[LootWnd].Open}
+    /delay 1s ${Window[LootWnd].Open}
     /doevents
-	|-------------------------------------
-	| KEEP DELAY TO POPULATE CORPPSE ITEMS
-	|-------------------------------------
-	/delay 5
 	|-------------------------------------
 
 	|--------------------------------------
@@ -2089,18 +2084,8 @@ Sub Zoning
     }
     |--------------------------------------
 
-	|--------------------------------------
-	/if (!${Corpse.Items}) {
-		:CloseCorpseLootWnd
-		/notify LootWnd DoneButton leftmouseup
-		/delay 2 !${Window[LootWnd].Open}
-		/if (${Window[LootWnd].Open}) /goto :CloseCorpseLootWnd  
-	} else {
-		/message \ay++ Corpse has item(s) on it to \arSTILL\ax to loot !!!
-		/goto :LootThisBitch
-	}
-	|--------------------------------------
-	
+    /notify LootWnd DoneButton leftmouseup
+    /delay 1s !${Window[LootWnd].Open}
     |--------------------------------------------
     /if (${Me.XTarget}) /call DoClearTargets
     |--------------------------------------------
