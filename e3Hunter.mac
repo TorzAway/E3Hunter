@@ -1882,7 +1882,10 @@ Sub Zoning
   /if (${Debugging}) /echo Sub CheckForCorpses Entry
 
   /call GMCheck
-  /hidecorpse looted
+  |------------------
+  |/hidecorpse looted
+  /hidecorpse none
+  |------------------
 
 :CheckAgain
   /message \ay- Checking for missed corpse(s).
@@ -1904,13 +1907,8 @@ Sub Zoning
     |----------------------------------------------
 
 	|-------------------------
-	/call CheckCasting
-	
-	:StopMovingToLoot
-	/delay 5 !${Me.Moving}
-	/if (${Me.Moving}) /goto :StopMovingToLoot
-	/delay 2 !${Me.Moving}
-	
+	/call CheckCasting	
+	/delay 5 !${Me.Moving}	
 	|--------------------------------------------------------------------------------
 	/if (!${Me.XTarget} && !${Me.Casting.ID} && !${Me.Moving} && ${LootMethod.Equal[DCONLY]}) /call LootMob_DC_Only
 	/if (!${Me.XTarget} && !${Me.Casting.ID} && !${Me.Moving} && ${LootMethod.Equal[E3]}) /call LootMob_E3
@@ -2000,24 +1998,19 @@ Sub Zoning
 	| -- HANDLE CONDITIONALY !
 	|---------------------------------------
 
-	:OpenCorpseLootWnd
-    /delay 2 ${Window[LootWnd].Open}
-	/if (!${Window[LootWnd].Open}) /goto :OpenCorpseLootWnd
-	/doevents
+	|-------------------------------------
+    /delay 2s ${Window[LootWnd].Open}
+    /doevents
+	|-------------------------------------
+	| KEEP DELAY TO POPULATE CORPPSE ITEMS
+	|-------------------------------------
+	/delay 5
+	|-------------------------------------
 
 	|--------------------------------------
-	/if (!${Corpse.Items}) {
-		/message \ar- NO LOOT! - Cheap Bastard !
-    } else {
-		:PopulateCorpseItems
-		/delay 5 ${Corpse.Items}
-		/if (!${Corpse.Items}) /goto :PopulateCorpseItems
-		
-		:LootThisBitch
+    /if (${Corpse.Items}) {
 		/varset LootTotal ${Corpse.Items}
 		/message \ay++ Corpse has (\at${LootTotal}\ay) item(s) on it to loot.
-		/delay 1
-		
 		|---------------------------------------
 		/for LootSlot 1 to ${LootTotal}
 			
@@ -2047,17 +2040,11 @@ Sub Zoning
 				
 			} else {
 			|--- BEGIN - LOOT AND HANDLE CURSOR ITEM
-				/message \ay-- Grabbing corpse item (\am${LootSlot}\ax) of (\am${LootTotal}\ax).
-				
-				:GetCursorItem
-				/nomodkey /shift /itemnotify Loot${LootSlot} leftmouseup			
-				/delay 1 ${Cursor.ID}
-				/if (!${Cursor.ID}) /goto :GetCursorItem
-			
-				:SelectQuantity
+				/message \ay-- Grabbing corpse item (\am${LootSlot}\ax) of (\am${LootTotal}\ax).				
+				/nomodkey /shift /itemnotify Loot${LootSlot} leftmouseup
+				/delay 5 ${Cursor.ID}
 				/if (${Window[QuantityWnd].Open}) /notify QuantityWnd QTYW_Accept_Button leftmouseup
-				/delay 1 !${Window[QuantityWnd].Open}
-				/if (${Window[QuantityWnd].Open}) /goto :SelectQuantity
+				/delay 5
 	
 				|----------------------------------------------------------------------------------------------
 				/varset CursorItemValueInPlat ${Math.Calc[${FindItem[=${Cursor.Name}].Value}/1000]}
@@ -2071,18 +2058,12 @@ Sub Zoning
 				/if (${Cursor.ID}) {			
 					/if (${Cursor.Name.Equal[Diamond Coin]}) {
 						/message \at+\ax \agKeeping a\ax \ay(\atDiamond Coin\ay) \ag worth \ay(\at${CursorItemValueInPlat}\ay)\ag platinum ... WOOT!\ax
-						:AutoInvLootItem1
 						/autoinventory 
-						/delay 2 !${Cursor.ID}
-						/if (${Cursor.ID}) /goto :AutoInvLootItem1
-						/delay 1
+						/delay 5 !${Cursor.ID}
 					} else /if (${CursorItemValueInPlat}>=${MinItemValue}) {
 						/message \at+\ax \agKeeping a\ax \ay(\at${Cursor.Name}\ay) \ag worth \ay(\at${CursorItemValueInPlat}\ay)\ag platinum ... WOOT!\ax
-						:AutoInvLootItem2
 						/autoinventory 
-						/delay 2 !${Cursor.ID}
-						/if (${Cursor.ID}) /goto :AutoInvLootItem2
-						/delay 1
+						/delay 5 !${Cursor.ID}
 					}
 				}
 				|--------------------------------------------------------
@@ -2092,11 +2073,8 @@ Sub Zoning
 				|--------------------------------------------------------
 				/if (${Cursor.ID}) {
 					/message \ar-\ax \arDestroying a\ax \ay(\at${Cursor.Name}\ay)\ar, that crap is woth less than \ay(\at${MinItemValue}\ay)\ar plat!\ax --(${CursorItemValueInPlat})--
-					:AutoDestLootItem
-					/destroy 
-					/delay 2 !${Cursor.ID}
-					/if (${Cursor.ID}) /goto :AutoDestLootItem
-					/delay 1
+					/destroy
+					/delay 5 !${Cursor.ID}
 				}
 				|--------------------------------------------------------			
 			|--- END - LOOT AND HANDLE CURSOR ITEM
@@ -2105,8 +2083,7 @@ Sub Zoning
 		/doevents
 		|--------------------------------------------
 		/if (${Me.XTarget}) /call DoClearTargets
-		|--------------------------------------------		
-		/delay 2
+		|--------------------------------------------
 		/next LootSlot
 		|---------------------------------------
     }
