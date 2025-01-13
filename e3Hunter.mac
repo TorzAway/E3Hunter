@@ -1709,7 +1709,7 @@ Sub NavToLoc2(int Y,int X,int Z)
 					/if (${Bool[${Plugin[MQ2Melee]}]}) /squelch /killthis
 					/squelch /attack on
 					/call DoClearTargets
-					/call CheckForCorpses
+					/if (${LootCorpse} && !${Me.XTarget}) /call CheckForCorpses
 					/doevents
 					/if (${UseClickDamage}) /call Clickies_Damage
 				}
@@ -1737,7 +1737,7 @@ Sub NavToLoc2(int Y,int X,int Z)
 				/if (${Bool[${Plugin[MQ2Melee]}]}) /squelch /killthis
 				/squelch /attack on
 				/call DoClearTargets
-				/call CheckForCorpses
+				/if (${LootCorpse} && !${Me.XTarget}) /call CheckForCorpses
 				/doevents
 				/if (${UseClickDamage}) /call Clickies_Damage
 			}
