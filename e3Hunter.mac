@@ -1882,12 +1882,13 @@ Sub Zoning
   /if (${Debugging}) /echo Sub CheckForCorpses Entry
 
   /call GMCheck
+
+:CheckAgain
   |------------------
   |/hidecorpse looted
   /hidecorpse none
   |------------------
 
-:CheckAgain
   /message \ay- Checking for missed corpse(s).
   /squelch /target radius 100 corpse
   /delay 5 ${Target.ID}
