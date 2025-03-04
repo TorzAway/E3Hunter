@@ -1,8 +1,8 @@
 |****************************************************************************************************************
 e3Hunter.mac - by Kroaking
-Last Updated: January 10th, 2025 - 02:13:00 PM
+Last Updated: March 4th, 2025 - 03:03:00 PM
 
-v1.2.4
+v1.2.5
 
 ****************************************************************************************************************|
 /squelch /log on
@@ -56,15 +56,20 @@ Sub Main
 	/message \ag- CheckBots \ayis set to \at[\ag${CheckBots}\at]\ax
 	/message \ag- DoBurns \ayis set to \at[\ag${DoBurns}\at]\ax
 	/message \ag- GroupNavToMe \ayis set to \at[\ag${GroupNavToMe}\at]\ax
+	/message \ag- LootCorpse \ayis set to \at[\ag${LootCorpse}\at]\ax
+	/message \ag- LootMethod \ayis set to \at[\ag${LootMethod}\at]\ax
+	/message \ag- MinItemValue \ayis set to \at[\ag${MinItemValue}\at]\ax	
+	/message \ag- MouseLock \ayis set to \at[\ag${MouseLock}\at]\ax
+	/message \ag- NoDropGankItems \ayis set to \at[\ag${NoDropGankItems}\at]\ax
+	/message \ag- ReclaimDC \ayis set to \at[\ag${ReclaimDC}\at]\ax	
 	/message \ag- UseClickBuffs \ayis set to \at[\ag${UseClickBuffs}\at]\ax
 	/message \ag- UseClickDamage \ayis set to \at[\ag${UseClickDamage}\at]\ax	
 	/message \ag- UseMq2Melee \ayis set to \at[\ag${UseMq2Melee}\at]\ax
-	/message \ag- LootCorpse \ayis set to \at[\ag${LootCorpse}\at]\ax
-	/message \ag- LootMethod \ayis set to \at[\ag${LootMethod}\at]\ax
-	/message \ag- MinItemValue \ayis set to \at[\ag${MinItemValue}\at]\ax
-	/message \ag- NoDropGankItems \ayis set to \at[\ag${NoDropGankItems}\at]\ax
-	/message \ag- ReclaimDC \ayis set to \at[\ag${ReclaimDC}\at]\ax	
 	|---------------------------------------------------------------------------
+
+	|--------------------------------------------
+	/if (${MouseLock}) /mouseto 190, 550
+	|--------------------------------------------		
 	
 	|---------------------------------------------------------------------------
 	/if (${HuntMethod.Equal[ANY]}) {
@@ -169,7 +174,7 @@ Sub Declares
 
 	|==================== DO NOT ALTER THESE VALUES ====================
 	/declare MacroName			string	outer	e3Hunter
-	/declare version			string	outer	1.2.4
+	/declare version			string	outer	1.2.5
 	/declare IniFileName		string	outer	${MacroName}_${Me.CleanName}.ini
 	/declare ZoneDataFileName	string	outer	${MacroName}_ZoneData.ini
 	/declare FirstRun			int		outer	0
@@ -242,6 +247,7 @@ Sub Declares
 	/call CheckINI ${IniFileName} General UseMq2Melee bool FALSE
 	/call CheckINI ${IniFileName} General LootCorpse bool FALSE
 	/call CheckINI ${IniFileName} General LootMethod string DCONLY
+	/call CheckINI ${IniFileName} General MouseLock bool TRUE
 	/call CheckINI ${IniFileName} General NoDropGankItems string NULL
 	/call CheckINI ${IniFileName} General MinItemValue int 10
 	/call CheckINI ${IniFileName} General ReclaimDC bool FALSE
@@ -1884,6 +1890,9 @@ Sub Zoning
   /call GMCheck
 
 :CheckAgain
+  |------------------
+  /if (${MouseLock}) /mouseto 190, 550
+  |------------------
   |------------------
   |/hidecorpse looted
   /hidecorpse none
