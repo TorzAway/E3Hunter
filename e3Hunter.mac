@@ -636,7 +636,7 @@ Sub DoSinglePull_Any(string Enemy)
 	:navto
 	/if (${Debugging}) /echo DoSinglePull NAVTO
 	|/if (${Target.ID}) /squelch /target clear
-	/if (${Spawn[${myTargetID}].Distance} > ${If[${PullAbilityRange},${PullAbilityRange},1]} && !${Target.Type.Equal[corpse]} && !${Me.XTarget} && ${PullRequiresLineOfSight} || ${Spawn[${myTargetID}].Distance} > ${If[${PullAbilityRange},${PullAbilityRange},1]} && !${Target.Type.Equal[corpse]} && !${Me.XTarget} && !${Spawn[${myTargetID}].LineOfSight}) {
+	/if (${Spawn[${myTargetID}].Distance} > ${If[${PullAbilityRange},${PullAbilityRange},1]} && !${Target.Type.Equal[corpse]} && !${Me.XTarget} && ${PullRequiresLineOfSight} && !${Spawn[${myTargetID}].LineOfSight}) {
 		/if (!${Spawn[${myTargetID}].ID}) {
 			/squelch /target clear
 			/if (${Debugging}) /echo \ar My target ID was null, so I'm returning out of the sub.
@@ -657,7 +657,10 @@ Sub DoSinglePull_Any(string Enemy)
 		/if (${Navigation.Active}) /nav stop
 	}
 	/delay 5
+	|----------------------------------------------------------------------------------------------------
 	/docommand ${If[${PullAbilityRange}>30,/stop,/stick moveback uw 10]}
+	/if (${Spawn[${myTargetID}].Distance}<=30 && !${Spawn[${myTargetID}].Aggressive}) /squelch /attack on
+	|----------------------------------------------------------------------------------------------------
 	|-----------------------------------------------
 	/if (${Debugging}) /echo DoSinglePull_Any Sub Exit
 /return
