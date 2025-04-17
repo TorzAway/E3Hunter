@@ -350,13 +350,13 @@ Sub CampInMarrs
 	/message \ayI am headed to \am[\atTemple of Marr\am]\ay.\ax
 	|--- Group - Start in Marrs
 	/delay 10
-	/squelch /e3bca /nav stop
-	/squelch /e3bca /playmelody stop
-	/squelch /e3bca /keypress x
+	/squelch /e3bcgz /nav stop
+	/squelch /e3bcgz /playmelody stop
+	/squelch /e3bcgz /keypress x
 	/delay 6
-	/squelch /e3bcaa /stand
+	/squelch /e3bcgza /stand
 	/delay 5
-	/squelch /e3bca /alt act 511
+	/squelch /e3bcgz /alt act 511
 
 	|---  Now Me !
 	/nav stop
@@ -371,13 +371,13 @@ Sub CampInMarrs
 	|----------------------------
 	/while (${Group.Member[1].OtherZone} || ${Group.Member[2].OtherZone} || ${Group.Member[3].OtherZone} || ${Group.Member[4].OtherZone} || ${Group.Member[5].OtherZone} || ${Group.Member[6].OtherZone}) {
 		|--- Group - Start in Marrs
-		/squelch /e3bca /nav stop
-		/squelch /e3bca /playmelody stop
-		/squelch /e3bca /keypress x
+		/squelch /e3bcgz /nav stop
+		/squelch /e3bcgz /playmelody stop
+		/squelch /e3bcgz /keypress x
 		/delay 6
-		/squelch /e3bcaa /stand
+		/squelch /e3bcgza /stand
 		/delay 5
-		/squelch /e3bca /alt act 511
+		/squelch /e3bcgz /alt act 511
 
 		|---  Now Me !
 		/nav stop
@@ -404,7 +404,7 @@ Sub CampInMarrs
 	/if (${HuntMethod.Equal[LOC]}) /call ForceSpawnStepReset
 	|------------------------
 	/message \arCAMPING TO DESKTOP !!!\ax
-	/squelch /e3bcaa /camp desktop
+	/squelch /e3bcgza /camp desktop
 	/delay 3s
 	/end
 
@@ -421,13 +421,13 @@ Sub GoToMarrs
 	/message \ayI am headed to \am[\atTemple of Marr\am]\ay.\ax
 	|--- Group - Start in Marrs
 	/delay 10
-	/squelch /e3bca /nav stop
-	/squelch /e3bca /playmelody stop
-	/squelch /e3bca /keypress x
+	/squelch /e3bcgz /nav stop
+	/squelch /e3bcgz /playmelody stop
+	/squelch /e3bcgz /keypress x
 	/delay 6
-	/squelch /e3bcaa /stand
+	/squelch /e3bcgza /stand
 	/delay 5
-	/squelch /e3bca /alt act 511
+	/squelch /e3bcgz /alt act 511
 
 	|---  Now Me !
 	/nav stop
@@ -442,13 +442,13 @@ Sub GoToMarrs
 	|----------------------------
 	/while (${Group.Member[1].OtherZone} || ${Group.Member[2].OtherZone} || ${Group.Member[3].OtherZone} || ${Group.Member[4].OtherZone} || ${Group.Member[5].OtherZone} || ${Group.Member[6].OtherZone}) {
 		|--- Group - Start in Marrs
-		/squelch /e3bca /nav stop
-		/squelch /e3bca /playmelody stop
-		/squelch /e3bca /keypress x
+		/squelch /e3bcgz /nav stop
+		/squelch /e3bcgz /playmelody stop
+		/squelch /e3bcgz /keypress x
 		/delay 6
-		/squelch /e3bcaa /stand
+		/squelch /e3bcgza /stand
 		/delay 5
-		/squelch /e3bca /alt act 511
+		/squelch /e3bcgz /alt act 511
 
 		|---  Now Me !
 		/nav stop
@@ -488,7 +488,7 @@ Sub DoClearTargets
 		:gotoloopkeepfighting
 		/if (${Me.Sitting}) /stand
 		/if (!${Target.ID} && ${Me.XTarget}) {
-			/squelch /e3bca /nav id ${Me.ID}
+			/squelch /e3bcgz /nav id ${Me.ID}
 			|/keypress º
 			/delay 5
 			/ClearTargets stick
@@ -499,7 +499,7 @@ Sub DoClearTargets
 			/delay 3
 			}
 		/if (${Target.ID} && !${Me.Combat}) {
-			/squelch /e3bca /nav id ${Me.ID}
+			/squelch /e3bcgz /nav id ${Me.ID}
 			|/keypress º
 			/delay 5
 			/ClearTargets stick
@@ -537,7 +537,7 @@ Sub DoClearTargets
 			/if (${Cast.Ready[3822]} && ${DoBurns}) /alt act 3822
 			| --- Encroaching Darkness
 			/if ((${SpawnCount[npc radius 50]} <3) && ${Spawn[npc radius 50].Aggressive} && ${Cast.Ready[826]} && ${DoBurns}) {
-				/squelch /e3bca /nav target
+				/squelch /e3bcgz /nav target
 				/assistme
 				/alt act 826
 				}
@@ -1007,7 +1007,7 @@ Sub DoSinglePull_Name(string Enemy)
 		/delay 5
 	}
 	|------------------------------
-	/squelch /e3bca /nav id ${Me.ID}
+	/squelch /e3bcgz /nav id ${Me.ID}
 	/delay 5
 	|----------------------------------------------------------
 	
@@ -1405,7 +1405,7 @@ Sub LocPullStepMove(string LocPull_Step)
 					/delay 5
 				}
 				|------------------------------
-				/squelch /e3bca /nav id ${Me.ID}
+				/squelch /e3bcgz /nav id ${Me.ID}
 				/delay 5
 				|----------------------------------------------------------
 
@@ -1485,7 +1485,7 @@ Sub ReturnToCamp
 	/message ==================================================================
 	/message \ag+++\ax \aoCompleted \ar${HuntMethod} \agCycle:\ax \ao...\ax \atRETURNING TO CAMP !!!\ax
 	/message ==================================================================
-	/squelch /e3bcaa /nav loc ${CampReturnLoc}
+	/squelch /e3bcgza /nav loc ${CampReturnLoc}
 	/delay 5
 	
 	:WaitTillAtCamp
@@ -1804,7 +1804,7 @@ Sub WaitNav(NavTargetID)
 				|------  ALL GO TO TARGET - staggered
 				/nav id ${NavTargetID}
 				/delay 5
-				/squelch /e3bca /nav id ${NavTargetID}
+				/squelch /e3bcgz /nav id ${NavTargetID}
 				|------  ALL GO TO TARGET - staggered
 				/varset courseCorrection ${courseCorrection.OriginalValue}
 			}
@@ -2272,7 +2272,7 @@ Sub DoorClick
 |--------------------------------------------------------
 Sub Group2Me
 /if (${Debugging}) /echo Sub Group2Me Entry
-	/e3bca /nav id ${Me.ID}
+	/e3bcgz /nav id ${Me.ID}
 /if (${Debugging}) /echo Sub Group2Me Exit
 /return
 |--------------------------------------------------------
@@ -2421,8 +2421,8 @@ Sub GroupWait
 
     /while ((${Group.Member[1].Distance} > 40) || (${Group.Member[2].Distance} > 40) || (${Group.Member[3].Distance} > 40) || (${Group.Member[4].Distance} > 40) || (${Group.Member[5].Distance} > 40) || (${Group.Member[6].Distance} > 40)) {
         /message \aywaiting for the group, timer ${GroupWaitTimer}.\ax
-		/e3bca /stand
-		/e3bca /nav id ${Me.ID}
+		/e3bcgz /stand
+		/e3bcgz /nav id ${Me.ID}
         /delay 5s
 		/varcalc GroupWaitTimer (${GroupWaitTimer})+1
 		/call GroupWaitTimer
@@ -2442,19 +2442,19 @@ Sub GroupWaitTimer
 	/if (${GroupWaitTimer}==8) /varset GroupWaitTimer 0
 	/if (${GroupWaitTimer}==5) {
 		/message \ayA Group Member might be stuck!
-		/squelch /e3bcaa /stand
-		/squelch /e3bcaa /removelev
-		/squelch /e3bcaa /moveto loc ${Me.Y} ${Me.X} ${Me.Z}
-		/squelch /e3bcaa /keypress back hold
+		/squelch /e3bcgza /stand
+		/squelch /e3bcgza /removelev
+		/squelch /e3bcgza /moveto loc ${Me.Y} ${Me.X} ${Me.Z}
+		/squelch /e3bcgza /keypress back hold
 		/delay 3s
-		/squelch /e3bcaa /keypress back
+		/squelch /e3bcgza /keypress back
 	}
 	/if (${GroupWaitTimer}==6) {
 		/message \ayA Group Member is stuck!
-		/squelch /e3bcaa /moveto loc ${Me.Y} ${Me.X} ${Me.Z}
-		/squelch /e3bcaa /keypress forward hold
+		/squelch /e3bcgza /moveto loc ${Me.Y} ${Me.X} ${Me.Z}
+		/squelch /e3bcgza /keypress forward hold
 		/delay 2s
-		/squelch /e3bcaa /keypress forward
+		/squelch /e3bcgza /keypress forward
 		/delay 2s
 	}
 	|--- Use Wayfarers Brotherhood Emblem' to COTH the group.
@@ -3015,9 +3015,9 @@ Sub CheckMesh
 
   	|--------------------------
 	/message \am<***> Sending the rest of my group to Magus as I sell <***>
-  	/squelch /e3bca /tar Magus Alaria
+  	/squelch /e3bcgz /tar Magus Alaria
 	/delay 5
-	/squelch /e3bca /nav target
+	/squelch /e3bcgz /nav target
 	/delay 5
 	|--------------------------
 
