@@ -1,8 +1,8 @@
 |****************************************************************************************************************
 e3Hunter.mac - by Kroaking
-Last Updated: March 4th, 2025 - 03:03:00 PM
+Last Updated: April 28th, 2025 - 08:51:00 AM
 
-v1.2.5
+v1.2.6
 
 ****************************************************************************************************************|
 /squelch /log on
@@ -174,7 +174,7 @@ Sub Declares
 
 	|==================== DO NOT ALTER THESE VALUES ====================
 	/declare MacroName			string	outer	e3Hunter
-	/declare version			string	outer	1.2.5
+	/declare version			string	outer	1.2.6
 	/declare IniFileName		string	outer	${MacroName}_${Me.CleanName}.ini
 	/declare ZoneDataFileName	string	outer	${MacroName}_ZoneData.ini
 	/declare FirstRun			int		outer	0
@@ -480,31 +480,37 @@ Sub GoToMarrs
 | --------------------------------------------------------------------------------------------
 Sub DoClearTargets
 	/if (${Debugging}) /echo Sub DoClearTargets Entry
-	/if (${Me.XTarget} || ${Target.ID}) {
-		/delay 5
+	/if (${Me.XTarget} || (${Target.ID} && ${Target.Type.Equal[npc]})) {
 		|/keypress º
-		/delay 5
+		|/delay 5
 		/ClearTargets stick
+		/keypress esc
+		/delay 10		
 		:gotoloopkeepfighting
 		/if (${Me.Sitting}) /stand
 		/if (!${Target.ID} && ${Me.XTarget}) {
 			/squelch /e3bcgz /nav id ${Me.ID}
 			|/keypress º
 			/delay 5
+			|----------			
+			|/xtarget set 1 ${Me.Name}
+			|/delay 3
+			|/xtarget remove
+			|/delay 3
+			|----------			
+			/target ${Me.XTarget[1].ID}
+			/delay 5
 			/ClearTargets stick
-			/delay 20
-			/xtarget set 1 ${Me.Name}
-			/delay 3
-			/xtarget remove
-			/delay 3
+			/keypress esc
+			/delay 10			
 			}
-		/if (${Target.ID} && !${Me.Combat}) {
+		/if ((${Target.ID} && ${Target.Type.Equal[npc]}) && !${Me.Combat}) {
 			/squelch /e3bcgz /nav id ${Me.ID}
 			|/keypress º
 			/delay 5
 			/ClearTargets stick
 			/keypress esc
-			/delay 20
+			/delay 10
 			}
 		/if (${Target.Type.Find[corpse]}) {
 			/keypress esc
@@ -594,9 +600,9 @@ Sub DoSinglePull_Any(string Enemy)
 			/if (${Debugging}) /e3bcg (Line: ${Macro.CurLine}) killthis
 			/squelch /e3bcg /nav id ${Me.ID}
 			/squelch /e3bcg /target id ${Me.XTarget}
-			/timed 10 /squelch /e3bcg /pet attack
-			/timed 15 /squelch /e3bcg /pet swarm
-			/timed 20 /squelch /e3bcg /assistme
+			/timed 10 /squelch /e3bcgz /assistme
+			/timed 15 /squelch /e3bcgz /pet attack
+			/timed 20 /squelch /e3bcgz /pet swarm
 		}
 		}
 
@@ -1891,45 +1897,47 @@ Sub Zoning
   /if (${Debugging}) /echo Sub CheckForCorpses Entry
 
   /call GMCheck
-
+  /message \ay- Checking for missed corpse(s).
+  /if (${Bool[${Spawn[Corpse radius 100]}]}) /message \at+++ \ayLooks like we have a corpse to loot.
+  
 :CheckAgain
   |------------------
-  /if (${MouseLock}) /mouseto 190, 550
-  |------------------
+  /if (${MouseLock}) /mouseto ${MouseLocValX}, ${MouseLocValY}
   |------------------
   |/hidecorpse looted
   /hidecorpse none
   |------------------
 
-  /message \ay- Checking for missed corpse(s).
   /squelch /target radius 100 corpse
   /delay 5 ${Target.ID}
-
-  /if (${Target.ID} && ${Target.Type.Equal[Corpse]}) {
-    /message \at+++ \ayLooks like we have a corpse to loot!\ax
-    /face fast nolook
-
+	
 	|----------------------------------------------
-	|-----
-	/if (${Navigation.PathExists[id ${Target.ID}]}) {
-		/if (${Target.ID} && ${Target.Type.Equal[Corpse]} && (${Target.Distance}>10) && !${Me.Casting.ID}) /nav id ${Target.ID}
-	} else {
-		 /if (${Target.ID} && ${Target.Type.Equal[Corpse]} && (${Target.Distance}>10) && !${Me.Casting.ID}) /moveto id ${Target.ID} mdist 10
-	}
-	|-----
-    |----------------------------------------------
+	/if (${Target.ID} && ${Target.Type.Equal[Corpse]}) {
+		/face fast nolook
 
-	|-------------------------
-	/call CheckCasting	
-	/delay 5 !${Me.Moving}	
-	|--------------------------------------------------------------------------------
-	/if (!${Me.XTarget} && !${Me.Casting.ID} && !${Me.Moving} && ${LootMethod.Equal[DCONLY]}) /call LootMob_DC_Only
-	/if (!${Me.XTarget} && !${Me.Casting.ID} && !${Me.Moving} && ${LootMethod.Equal[E3]}) /call LootMob_E3
-	|--------------------------------------------------------------------------------
+		|----------------------------------------------
+		|-----
+		/if (${Navigation.PathExists[id ${Target.ID}]}) {
+			/if (${Target.ID} && ${Target.Type.Equal[Corpse]} && (${Target.Distance}>10) && !${Me.Casting.ID}) /nav id ${Target.ID}
+		} else {
+			/if (${Target.ID} && ${Target.Type.Equal[Corpse]} && (${Target.Distance}>10) && !${Me.Casting.ID}) /moveto id ${Target.ID} mdist 10
+		}
+		|-----
+		|----------------------------------------------
+
+		|-------------------------
+		/call CheckCasting
+		/delay 5 !${Me.Moving}	
+		|--------------------------------------------------------------------------------
+		/if (!${Me.XTarget} && !${Me.Casting.ID} && !${Me.Moving} && ${LootMethod.Equal[DCONLY]}) /call LootMob_DC_Only
+		/if (!${Me.XTarget} && !${Me.Casting.ID} && !${Me.Moving} && ${LootMethod.Equal[E3]}) /call LootMob_E3
+		/delay 5
+		|--------------------------------------------------------------------------------
+	}
     /squelch /target clear
 	|-------------------------
 	
-    /goto :CheckAgain
+    /if (${Bool[${Spawn[Corpse radius 100]}]}) /goto :CheckAgain
   } else {
     /message \ar+++ \ayNo corpse(s) found to loot.\ax
   }
@@ -1957,6 +1965,7 @@ Sub Zoning
 	| -- HANDLE CONDITIONALY !
 	|---------------------------------------
 	/if (!${Me.XTarget}) {
+		/message \at+++ \ayLooting - \ag Corpse\ao: \ar[\am${Target.CleanName}\ar] \agID\ao: \ar[\am${Target.ID}\ar].
 		/loot
 	} else {
 		/call DoClearTargets
@@ -2002,6 +2011,7 @@ Sub Zoning
 	| -- HANDLE CONDITIONALY !
 	|---------------------------------------
 	/if (!${Me.XTarget}) {
+		/message \at+++ \ayLooting - \ag Corpse\ao: \ar[\am${Target.CleanName}\ar] \agID\ao: \ar[\am${Target.ID}\ar].
 		/loot
 	} else {
 		/call DoClearTargets
