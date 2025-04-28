@@ -1,8 +1,8 @@
 |****************************************************************************************************************
 e3Hunter.mac - by Kroaking
-Last Updated: April 28th, 2025 - 08:51:00 AM
+Last Updated: April 28th, 2025 - 12:41:00 PM
 
-v1.2.6
+v1.2.7
 
 ****************************************************************************************************************|
 /squelch /log on
@@ -174,7 +174,7 @@ Sub Declares
 
 	|==================== DO NOT ALTER THESE VALUES ====================
 	/declare MacroName			string	outer	e3Hunter
-	/declare version			string	outer	1.2.6
+	/declare version			string	outer	1.2.7
 	/declare IniFileName		string	outer	${MacroName}_${Me.CleanName}.ini
 	/declare ZoneDataFileName	string	outer	${MacroName}_ZoneData.ini
 	/declare FirstRun			int		outer	0
@@ -346,47 +346,49 @@ Sub Declares
 | --------------------------------------------------------------------------------------------
 Sub CampInMarrs
 	/if (${Debugging}) /echo Sub CampInMarrs Entry
+	/declare y int local 1
+		
 	/message \atWe are not set to repeat expeditions, Gating to Temple of Marr to camp !
 	/message \ayI am headed to \am[\atTemple of Marr\am]\ay.\ax
-	|--- Group - Start in Marrs
+	
+	|---------------------
+	|--- Group - GoToMarrs
+	|---------------------
 	/delay 10
-	/squelch /e3bcgz /nav stop
-	/squelch /e3bcgz /playmelody stop
-	/squelch /e3bcgz /keypress x
+	/squelch /e3bcgza /nav stop
+	/squelch /e3bcgza /playmelody stop
+	/squelch /e3bcgza /keypress x
 	/delay 6
 	/squelch /e3bcgza /stand
 	/delay 5
-	/squelch /e3bcgz /alt act 511
-
-	|---  Now Me !
-	/nav stop
-	/if (${Select[${Me.Class.ShortName},BRD]}) /playmelody stop
-	/keypress x
-	/delay 6
-	/stand
-	/delay 5
-	/alt act 511
+	/squelch /e3bcgza /alt act 511
 	/delay 20s
 
 	|----------------------------
-	/while (${Group.Member[1].OtherZone} || ${Group.Member[2].OtherZone} || ${Group.Member[3].OtherZone} || ${Group.Member[4].OtherZone} || ${Group.Member[5].OtherZone} || ${Group.Member[6].OtherZone}) {
+	/while (${Group.Member[1].OtherZone} || ${Group.Member[2].OtherZone} || ${Group.Member[3].OtherZone} || ${Group.Member[4].OtherZone} || ${Group.Member[5].OtherZone}) {
+		
+		|--------------------------
 		|--- Group - Start in Marrs
-		/squelch /e3bcgz /nav stop
-		/squelch /e3bcgz /playmelody stop
-		/squelch /e3bcgz /keypress x
-		/delay 6
-		/squelch /e3bcgza /stand
-		/delay 5
-		/squelch /e3bcgz /alt act 511
-
-		|---  Now Me !
-		/nav stop
-		/if (${Select[${Me.Class.ShortName},BRD]}) /playmelody stop
-		/keypress x
-		/delay 6
-		/stand
-		/delay 5
-		/alt act 511
+		|---------------------------
+		/for y 1 to ${Group.Members} 
+		/message \ayChecking status of: \at(\ag${Group.Member[${y}].Name}\at)\ay.
+		/if (${Group.Member[${y}].OtherZone}) {
+			/message \ar(${Group.Member[${y}].Name}) is NOT in ZONE !
+			/squelch /e3bct ${Group.Member[${y}].Name} /nav stop
+			/if (${Group.Member[${y}].Class.ShortName.Equal[BRD]}) /squelch /e3bct ${Group.Member[${y}].Name} /playmelody stop
+			/squelch /e3bct ${Group.Member[${y}].Name} /keypress x
+			/delay 5
+			/squelch /e3bct ${Group.Member[${y}].Name} /stand
+			/delay 5
+			/squelch /e3bct ${Group.Member[${y}].Name} /alt act 511
+			/delay 5
+			/next y
+		} else {
+			/message \at(\ag${Group.Member[${y}].Name}\at)\ay is here.
+			/delay 5
+			/next y
+		}
+		|---------------------------
 		/delay 20s
 	}
 	|----------------------------
@@ -417,61 +419,64 @@ Sub CampInMarrs
 | --------------------------------------------------------------------------------------------
 Sub GoToMarrs
 	/if (${Debugging}) /echo Sub GoToMarrs Entry
+	/declare y int local 1
+	
 	/message \arOoops..   your not in a valid starting zone for macro, Gating to Temple of Marr !
 	/message \ayI am headed to \am[\atTemple of Marr\am]\ay.\ax
-	|--- Group - Start in Marrs
+	
+	|---------------------
+	|--- Group - GoToMarrs
+	|---------------------
 	/delay 10
-	/squelch /e3bcgz /nav stop
-	/squelch /e3bcgz /playmelody stop
-	/squelch /e3bcgz /keypress x
+	/squelch /e3bcgza /nav stop
+	/squelch /e3bcgza /playmelody stop
+	/squelch /e3bcgza /keypress x
 	/delay 6
 	/squelch /e3bcgza /stand
 	/delay 5
-	/squelch /e3bcgz /alt act 511
-
-	|---  Now Me !
-	/nav stop
-	/if (${Select[${Me.Class.ShortName},BRD]}) /playmelody stop
-	/keypress x
-	/delay 6
-	/stand
-	/delay 5
-	/alt act 511
+	/squelch /e3bcgza /alt act 511
 	/delay 20s
 
 	|----------------------------
-	/while (${Group.Member[1].OtherZone} || ${Group.Member[2].OtherZone} || ${Group.Member[3].OtherZone} || ${Group.Member[4].OtherZone} || ${Group.Member[5].OtherZone} || ${Group.Member[6].OtherZone}) {
+	/while (${Group.Member[1].OtherZone} || ${Group.Member[2].OtherZone} || ${Group.Member[3].OtherZone} || ${Group.Member[4].OtherZone} || ${Group.Member[5].OtherZone}) {
+		
+		|--------------------------
 		|--- Group - Start in Marrs
-		/squelch /e3bcgz /nav stop
-		/squelch /e3bcgz /playmelody stop
-		/squelch /e3bcgz /keypress x
-		/delay 6
-		/squelch /e3bcgza /stand
-		/delay 5
-		/squelch /e3bcgz /alt act 511
-
-		|---  Now Me !
-		/nav stop
-		/if (${Select[${Me.Class.ShortName},BRD]}) /playmelody stop
-		/keypress x
-		/delay 6
-		/stand
-		/delay 5
-		/alt act 511
+		|---------------------------
+		/for y 1 to ${Group.Members} 
+		/message \ayChecking status of: \at(\ag${Group.Member[${y}].Name}\at)\ay.
+		/if (${Group.Member[${y}].OtherZone}) {
+			/message \ar(${Group.Member[${y}].Name}) is NOT in ZONE !
+			/squelch /e3bct ${Group.Member[${y}].Name} /nav stop
+			/if (${Group.Member[${y}].Class.ShortName.Equal[BRD]}) /squelch /e3bct ${Group.Member[${y}].Name} /playmelody stop
+			/squelch /e3bct ${Group.Member[${y}].Name} /keypress x
+			/delay 5
+			/squelch /e3bct ${Group.Member[${y}].Name} /stand
+			/delay 5
+			/squelch /e3bct ${Group.Member[${y}].Name} /alt act 511
+			/delay 5
+			/next y
+		} else {
+			/message \at(\ag${Group.Member[${y}].Name}\at)\ay is here.
+			/delay 5
+			/next y
+		}
+		|---------------------------
 		/delay 20s
 	}
 	|----------------------------
-
+	/message \agAll group members are here.
+	|----------------------------
 	/while (${Zone.ID} != ${TempleofMarr}) {
 		/delay 5s
 	}
 	/call GroupWait
 	/delay 2s
-
+	|----------------------------
+	
 	/if (${Zone.ID} == ${TempleofMarr}) /message \ayI am currently in \am[\atTemple of Marr\am]\ay.\ax
-	/call GoToDranikFromMarr
 
-/if (${Debugging}) /echo Sub GoToMarrs Exit
+	/if (${Debugging}) /echo Sub GoToMarrs Exit
 /return
 | --------------------------------------------------------------------------------------------
 
