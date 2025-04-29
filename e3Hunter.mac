@@ -1,8 +1,8 @@
 |****************************************************************************************************************
 e3Hunter.mac - by Kroaking
-Last Updated: April 28th, 2025 - 12:41:00 PM
+Last Updated: April 29th, 2025 - 11:11:00 AM
 
-v1.2.7
+v1.2.8
 
 ****************************************************************************************************************|
 /squelch /log on
@@ -174,7 +174,7 @@ Sub Declares
 
 	|==================== DO NOT ALTER THESE VALUES ====================
 	/declare MacroName			string	outer	e3Hunter
-	/declare version			string	outer	1.2.7
+	/declare version			string	outer	1.2.8
 	/declare IniFileName		string	outer	${MacroName}_${Me.CleanName}.ini
 	/declare ZoneDataFileName	string	outer	${MacroName}_ZoneData.ini
 	/declare FirstRun			int		outer	0
@@ -590,7 +590,7 @@ Sub DoSinglePull_Any(string Enemy)
 				/if (${Target.ID}) /face
 				/if (${Bool[${Plugin[MQ2Melee]}]}) /squelch /killthis
 				/squelch /attack on
-				/if (${Select[${Me.Class.ShortName},SHD,MAG,NEC,BST,SHM,ENC,DRU]} && ${Me.Pet.ID}) /pet attack
+				|/if (${Select[${Me.Class.ShortName},SHD,MAG,NEC,BST,SHM,ENC,DRU]} && ${Me.Pet.ID}) /pet attack
 				/doevents
 				/if (${UseClickDamage}) /call Clickies_Damage
 			}
@@ -606,8 +606,8 @@ Sub DoSinglePull_Any(string Enemy)
 			/squelch /e3bcg /nav id ${Me.ID}
 			/squelch /e3bcg /target id ${Me.XTarget}
 			/timed 10 /squelch /e3bcgz /assistme
-			/timed 15 /squelch /e3bcgz /pet attack
-			/timed 20 /squelch /e3bcgz /pet swarm
+			|/timed 15 /squelch /e3bcgz /pet attack
+			|/timed 20 /squelch /e3bcgz /pet swarm
 		}
 		}
 
@@ -2095,7 +2095,7 @@ Sub Zoning
 				|---- DESTROY ANYTHING REMAINING
 				|--------------------------------------------------------
 				/if (${Cursor.ID}) {
-					/message \ar-\ax \arDestroying a\ax \ay(\at${Cursor.Name}\ay)\ar, that crap is woth less than \ay(\at${MinItemValue}\ay)\ar plat!\ax --(${CursorItemValueInPlat})--
+					/message \ar-\ax \arDestroying a\ax \ay(\at${Cursor.Name}\ay)\ar, that crap is woth less than \ay(\at${MinItemValue}\ay)\ar plat!\ag Sell Val\ao:\at(\ay${CursorItemValueInPlat}\at)\ay.
 					/destroy
 					/delay 5 !${Cursor.ID}
 				}
