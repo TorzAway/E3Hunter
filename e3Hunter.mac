@@ -1,8 +1,8 @@
 |****************************************************************************************************************
 e3Hunter.mac - by Kroaking
-Last Updated: April 29th, 2025 - 11:11:00 AM
+Last Updated: July 27th, 2025 - 04:04:00 PM
 
-v1.2.8
+v1.2.9
 
 ****************************************************************************************************************|
 /squelch /log on
@@ -63,8 +63,7 @@ Sub Main
 	/message \ag- NoDropGankItems \ayis set to \at[\ag${NoDropGankItems}\at]\ax
 	/message \ag- ReclaimDC \ayis set to \at[\ag${ReclaimDC}\at]\ax	
 	/message \ag- UseClickBuffs \ayis set to \at[\ag${UseClickBuffs}\at]\ax
-	/message \ag- UseClickDamage \ayis set to \at[\ag${UseClickDamage}\at]\ax	
-	/message \ag- UseMq2Melee \ayis set to \at[\ag${UseMq2Melee}\at]\ax
+	/message \ag- UseClickDamage \ayis set to \at[\ag${UseClickDamage}\at]\ax
 	|---------------------------------------------------------------------------
 
 	|--------------------------------------------
@@ -174,7 +173,7 @@ Sub Declares
 
 	|==================== DO NOT ALTER THESE VALUES ====================
 	/declare MacroName			string	outer	e3Hunter
-	/declare version			string	outer	1.2.8
+	/declare version			string	outer	1.2.9
 	/declare IniFileName		string	outer	${MacroName}_${Me.CleanName}.ini
 	/declare ZoneDataFileName	string	outer	${MacroName}_ZoneData.ini
 	/declare FirstRun			int		outer	0
@@ -244,7 +243,6 @@ Sub Declares
 	/call CheckINI ${IniFileName} General GroupNavToMe bool TRUE
 	/call CheckINI ${IniFileName} General UseClickBuffs bool FALSE
 	/call CheckINI ${IniFileName} General UseClickDamage bool FALSE
-	/call CheckINI ${IniFileName} General UseMq2Melee bool FALSE
 	/call CheckINI ${IniFileName} General LootCorpse bool FALSE
 	/call CheckINI ${IniFileName} General LootMethod string DCONLY
 	/call CheckINI ${IniFileName} General MouseLock bool TRUE
@@ -588,7 +586,6 @@ Sub DoSinglePull_Any(string Enemy)
 		/if (${Spawn[id ${Target.ID}].Distance} > 30) /squelch /nav id ${Target.ID}
 		/if (${Me.XTarget} && ${Spawn[id ${Target.ID}].Distance} < 30) {
 				/if (${Target.ID}) /face
-				/if (${Bool[${Plugin[MQ2Melee]}]}) /squelch /killthis
 				/squelch /attack on
 				|/if (${Select[${Me.Class.ShortName},SHD,MAG,NEC,BST,SHM,ENC,DRU]} && ${Me.Pet.ID}) /pet attack
 				/doevents
@@ -798,7 +795,6 @@ Sub Combat
 		/if (${Spawn[id ${Target.ID}].Distance} > 30) /squelch /nav id ${Target.ID}
 		/if (${Me.XTarget} && ${Spawn[id ${Target.ID}].Distance} < 30) {
 				/if (${Target.ID}) /face
-				/if (${Bool[${Plugin[MQ2Melee]}]}) /squelch /killthis
 				/squelch /attack on
 				/doevents
 				/if (${UseClickDamage}) /call Clickies_Damage
@@ -813,7 +809,6 @@ Sub Combat
 			}
 			/if (${Me.XTarget} && ${Spawn[id ${Target.ID}].Distance} < 30) {
 				/if (${Target.ID}) /face
-				/if (${Bool[${Plugin[MQ2Melee]}]}) /squelch /killthis
 				/squelch /attack on
 				/doevents
 				/if (${UseClickDamage}) /call Clickies_Damage
@@ -841,7 +836,6 @@ Sub Combat
 			/delay 10
 			/if (${Me.XTarget} && ${Spawn[id ${Target.ID}].Distance} < 30) {
 				/if (${Target.ID}) /face
-				/if (${Bool[${Plugin[MQ2Melee]}]}) /squelch /killthis
 				/squelch /attack on
 				/doevents
 				/if (${UseClickDamage}) /call Clickies_Damage
@@ -866,7 +860,6 @@ Sub Combat
 					}
 				/if (${Me.XTarget} && ${Spawn[id ${Target.ID}].Distance} < 30) {
 				/if (${Target.ID}) /face
-				/if (${Bool[${Plugin[MQ2Melee]}]}) /squelch /killthis
 				/squelch /attack on
 				/doevents
 				/if (${UseClickDamage}) /call Clickies_Damage
@@ -917,7 +910,6 @@ Sub Combat
 			}
 		/if (${Me.XTarget} && ${Spawn[id ${Target.ID}].Distance} < 30) {
 				/if (${Target.ID}) /face
-				/if (${Bool[${Plugin[MQ2Melee]}]}) /squelch /killthis
 				/squelch /attack on
 				/doevents
 				/if (${UseClickDamage}) /call Clickies_Damage
@@ -1726,7 +1718,6 @@ Sub NavToLoc2(int Y,int X,int Z)
 					/call Group2Me
 					|------  CALL GROUP TO ME To FIGHT									
 					/if (${Target.ID}) /face
-					/if (${Bool[${Plugin[MQ2Melee]}]}) /squelch /killthis
 					/squelch /attack on
 					/call DoClearTargets
 					/if (${LootCorpse} && !${Me.XTarget}) /call CheckForCorpses
@@ -1754,7 +1745,6 @@ Sub NavToLoc2(int Y,int X,int Z)
 				/call Group2Me
 				|------  CALL GROUP TO ME To FIGHT				
 				/if (${Target.ID}) /face
-				/if (${Bool[${Plugin[MQ2Melee]}]}) /squelch /killthis
 				/squelch /attack on
 				/call DoClearTargets
 				/if (${LootCorpse} && !${Me.XTarget}) /call CheckForCorpses
@@ -2855,17 +2845,7 @@ Sub CheckThings
 
 	/call CheckPlugin MQ2Nav
 	/call CheckMesh
-	/call CheckPlugin MQ2Events
-	|------------------------------------------------------------   
-	/if (${UseMq2Melee}) {
-		/call CheckPlugin MQ2Melee
-	} else {
-		/if (${Bool[${Plugin[MQ2Melee]}]}) {
-			/message \ay -- Unloading \am[\atMQ2Melee\am]\ay plugin.
-			/squelch /plugin MQ2Melee unload noauto
-		}
-	}
-	|------------------------------------------------------------   
+	/call CheckPlugin MQ2Events   
 	/call CheckPlugin MQ2MoveUtils
 
 	|------------------------------------------------------------   
