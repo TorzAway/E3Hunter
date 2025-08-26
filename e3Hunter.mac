@@ -1,8 +1,8 @@
 |****************************************************************************************************************
 e3Hunter.mac - by Kroaking
-Last Updated: July 27th, 2025 - 04:04:00 PM
+Last Updated: August 25th, 2025 - 02:12:00 PM
 
-v1.2.9
+v1.3.0
 
 ****************************************************************************************************************|
 /squelch /log on
@@ -130,6 +130,7 @@ Sub Main
 	|----------------------------
 	|-------------------------While Not Dead 
 	/while (!${Me.State.Equal[DEAD]} && (${Zone.ID}==${startZone})) {
+		/if (${Target.ID} && !${Me.XTarget} && !${Me.Casting.ID}) /squelch /target clear
 		|-----------------------------------------------
 		| Before we single pull ...   Check if we should loot Corpses.
 		|-----------------------------------------------
@@ -173,7 +174,7 @@ Sub Declares
 
 	|==================== DO NOT ALTER THESE VALUES ====================
 	/declare MacroName			string	outer	e3Hunter
-	/declare version			string	outer	1.2.9
+	/declare version			string	outer	1.3.0
 	/declare IniFileName		string	outer	${MacroName}_${Me.CleanName}.ini
 	/declare ZoneDataFileName	string	outer	${MacroName}_ZoneData.ini
 	/declare FirstRun			int		outer	0
