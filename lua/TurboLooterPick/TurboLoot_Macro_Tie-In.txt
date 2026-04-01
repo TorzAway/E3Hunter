@@ -1,0 +1,219 @@
+================================================================================================================
+SETUP:
+
+In order to get this integrated, you need to make some additions to some files.
+
+================================================================================================================
+
+++++++++++++++++++++++++++++
+1) /config/ingame.cfg
+++++++++++++++++++++++++++++
+
+|------------------------------------------------------------
+
+A) Make an entry for:
+
+/e3varset GrpMainLooter NOBODY
+
+This will set a default person of NOBODY as the GrpMainLooter variable so the system ALWAYS has a default value when client logs in.
+
+|------------------------------------------------------------
+
+B) Make an addition for the entries:
+
+/if (${Select[${Zone.ID},151,152,202,203,219,344,345,386,737,738]}) /e3varset Turbo false
+/if (!${Select[${Zone.ID},151,152,202,203,219,344,345,386,737,738]}) /e3varset Turbo true
+
+|---------
+
+This will set a default value for Turbo varible ...  
+	which you will be able to toggle on/off via Buttonmaster  or /config/zoned.cfg manually 
+	if wanted, but NEEDS to be set ON in order for Automatic GLobally control.
+	
+	The macro's themselves do not care about this setting being used at all, they dont use it for global control
+	It is only required for integration into Buttonmaster / e3 since the Tloot line in E3 ini uses it.
+
+|---------
+BASICLY ..  if ON ..   WHOMEVER is set to Turbolooter will AUTOMATTICLY loot upon camp clear.
+            if OFF..   WHOMEVER is set to Turbolooter will NOT AUTOMATTICLY loot upon camp clear.
+|---------
+
+HINT: ~ *** You can also add this to ZONED.CFG to always set status upon zoning. *** ~
+
+Creative example:
+;----------------- DISABLE TURBO: IF I HAVE AN ASSIGNED DZ or LDON EXPEDITION --------- 
+/timed 60 /if (${Window[DynamicZoneWnd].Child[DZ_CurrentDZValue].Text.Length}!=0) /e3varset Turbo false
+/timed 60 /if (${Window[AdventureRequestWnd].Child[AdvRqst_NPCText].Text.Length}!=47) /e3varset Turbo false
+;------------------------------------------------------------
+
+|------------------------------------------------------------
+
+================================================================================================================
+
+++++++++++++++++++++++++++++
+2) /config/e3 Bot Inis/TankName_Laszarus.ini ( Your Tank/ Driver's E3 INI file: )
+++++++++++++++++++++++++++++
+
+(${GrpMainLooter}) is the E3Variable that is used to control who is Turboloot looter for the group.
+
+Add this line to your [EVENTS], it uses the defined ${GrpMainLooter} as the person to send loot command to.
+|------------------------------------------------------------
+
+INTEGRATING WITH BUTTONMASTER AND GLOBAL CONTROL:
+
+[Events]
+Tloot=/timed 10 /if (!${Spawn[npc radius 50].Aggressive} && ${Turbo} && ${SpawnCount[npccorpse radius 50]}) /squelch /e3bct ${GrpMainLooter} /mac TurboLoot
+
+|------------------------------------------------------------
+
+GrpMainLooterName is the PUBLISHED Key name that needs to be PUBLISHED on your tank in E3 INI.
+GrpMainLooterName is associated with the MQ Variable that is used in the Tloot macro call (${GrpMainLooter}).
+
+
+Add this line to your [E3BotsPublishData (key/value)] section to PUBLISH the data.
+|------------------------------------------------------------
+[E3BotsPublishData (key/value)]
+GrpMainLooterName=${GrpMainLooter}
+
+|------------------------------------------------------------
+
+Now your set to have your driver provide the infoirmation needed to be monitored / set.
+
+================================================================================================================
+
+++++++++++++++++++++++++++++
+3) BUTTONMASTER INTEGRATION:
+++++++++++++++++++++++++++++
+
+=========================
+TWO BUTTONMASTER BUTTONS:    uses: GrpMainLooter as E3Variable for TURBOLOOTER
+=========================    uses: GrpMainLooterName as the Published KEY to query against to associate GrpMainLooter 
+
+Designed to quickly either LOOT or SET THE GROUP LOOTER via the TurboPickLooter.lua
+
+|------------------------------------------------------------
+
+|----------------|
+1) TURBOLOOTER
+|----------------|
+
+|----------------|
+Label (Evaluated):
+|----------------|
+return 'TurboLoot ' .. (tostring(mq.TLO.MQ2Mono.Query('e3,E3Bots(' .. mq.TLO.Me.CleanName() .. ').Query(GrpMainLooterName)')())) .. ''
+
+|----------------|
+CONTENT:
+|----------------|
+/docommand /if (${If[${MQ2Mono.Query[e3,GrpMainLooter].NotEqual["NOBODY"]},1,0]}) /e3bct ${MQ2Mono.Query[e3,GrpMainLooter]} /mac TurboLoot
+/docommand /if (${If[${MQ2Mono.Query[e3,GrpMainLooter].Equal["NOBODY"]},1,0]}) /lua run TurboLooterPick
+
+|------------------------------------------------------------
+
+|-----------------|
+2) TURBOLOOT ON/OFF
+|-----------------|
+
+|-----------------|
+Label (Evaluated):
+|-----------------|
+return 'Turbo ' .. (tostring(mq.TLO.MQ2Mono.Query('e3, Turbo')()) == 'true' and "Loot ON" or "Loot OFF")
+
+
+|----------------|
+CONTENT:
+|----------------|
+/docommand ${If[${Bool[${MQ2Mono.Query[e3,Turbo]}]},/multi ; /e3varset Turbo false ; /e3varset GrpMainLooter NOBODY,/e3varset Turbo true]}
+/docommand /if (${If[${MQ2Mono.Query[e3,GrpMainLooter].Equal["NOBODY"]},1,0]}) /lua run TurboLooterPick
+
+================================================================================================================
+
++++++++++++++++++++++++++++++++++++++++++
+4) SPECIFIC MACRO DATA USED TO INTEGRATE:
++++++++++++++++++++++++++++++++++++++++++
+
+=====================
+#chat group					( MUST be in macro to pick up Gsay event trigger )
+=====================
+
+|------------------------------------------------------------
+
+=====================
+EVENT
+( TurboLooter declared  already as a string from creation of event... )
+
+#event TurboLootDone "#*# tells the group, '[DONE LOOTING]'#*#"
+====================
+
+|------------------------------------------------------------
+
+=====================
+VARIABLE(s)
+====================
+
+|-----------------------------------------------------------------------------
+| In your macro ... DECLARE TurboLootPause  as OUTER and set to FALSE
+|-----------------------------------------------------------------------------
+/declare TurboLootPause		bool	outer FALSE
+
+|-----------------------------------------------------------------------------
+| In your macro ... set Turbolooter to the pulled variablie from Mq2Mono Query.
+|-----------------------------------------------------------------------------
+/varset TurboLooter ${MQ2Mono.Query[e3,E3Bots(${Me.CleanName}).Query(GrpMainLooterName)]}
+
+|------------------------------------------------------------
+
+=====================
+SUBS   ( Pause until I revceive event trigger release )
+====================
+
+| --------------------------------------------------------------------------------------------
+|SUB: LootMob_Turboloot -- Let Turboloot Looting handle your corpseloot.
+| --------------------------------------------------------------------------------------------
+  Sub LootMob_Turboloot
+	/if (${Debugging}) /echo Sub LootMob_Turboloot Entry		
+
+	|---------------------------------------
+	| -- Let TURBOLOOT Looting System handle this !
+	|---------------------------------------
+	/if (!${Me.XTarget} && !${Bool[${Spawn[npc radius 50].Aggressive}]}) {
+		/message \at+++ \ayHaving \am[\ag${TurboLooter}\am]\ay loot via \am[\aoTurboLoot\am]\ay.		
+		/message \at+ \aoHiding corpse(s) from myself.
+		/hidecorpse all
+		/squelch /e3bct ${TurboLooter} /mac TurboLoot
+		/message \at+ \aoWaiting on \am[\ag${TurboLooter}\am]\ay to finish looting.
+		/varset TurboLootPause TRUE
+		/delay 5
+		|---------------------------
+		/while (${TurboLootPause}) {			
+			/if (${Me.XTarget} || ${Bool[${Spawn[npc radius 50].Aggressive}]}) /call DoClearTargets			
+			/doevents
+			/delay 1s
+		}
+		|---------------------------
+		/message \at+++ \ayDone having \am[\ag${TurboLooter}\am]\ay loot via \am[\aoTurboLoot\am]\ay.
+	} else {
+		/call DoClearTargets
+	}
+	|---------------------------------------
+	| -- Let TURBOLOOT Looting System handle this !
+	|---------------------------------------
+	|--------------------------------------------
+	/if (${Me.XTarget} || ${Bool[${Spawn[npc radius 50].Aggressive}]}) /call DoClearTargets
+	|--------------------------------------------
+	/doevents
+	|-------------------------------------------------------------------------------------
+
+	/if (${Debugging}) /echo Sub LootMob_Turboloot Exit
+  /return
+| --------------------------------------------------------------------------------------------
+
+|--------------------------------------------------------
+Sub Event_TurboLootDone
+	/message \at+ \am[\ag${TurboLooter}\am]\ay has finished looting.
+	/varset TurboLootPause FALSE
+	/doevents flush TurboLootDone
+/return
+|-------------------------------------------------------
+
+================================================================================================================
