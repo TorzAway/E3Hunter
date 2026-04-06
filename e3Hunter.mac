@@ -1,8 +1,8 @@
 |****************************************************************************************************************
 e3Hunter.mac - by Kroaking
-Last Updated: April 2nd, 2026 - 05:48:00 PM
+Last Updated: April 6th, 2026 - 02:34:00 PM
 
-v1.3.7
+v1.4.0
 
 ****************************************************************************************************************|
 /squelch /log on
@@ -41,8 +41,8 @@ Sub Main
 	/declare runcounter 		int 		outer	0
 	/declare notkillable		int 		outer	0
 	/declare Announce			bool		outer	FALSE
-	/declare version			string		outer	1.3.7
-	/declare LastUpdated		string		outer	"Last Updated: April 2nd, 2026 - 05:48:00 PM"
+	/declare version			string		outer	1.4.0
+	/declare LastUpdated		string		outer	"Last Updated: April 6th, 2026 - 02:34:00 PM"
 
 	/message ==================================================================
  	/call Declares
@@ -122,20 +122,7 @@ Sub Main
 	|--------------
 	/call GroupWait
 	|--------------
-	
-	
-	
-	
-	
-	
-	|-------
-	|--/end
-	|-------
-	
-	
-	
-	
-	
+		
 	| --- MAIN ------------------------------------------------------------------------------
 	:mainloop
 	|---------
@@ -388,17 +375,34 @@ Sub DoClearTargets
 	
 	/declare i 				int 	local	0
 	/declare CurrentTarget 	int 	local	0
-
+	
+	|----------------------------------------------------------------------------------
+	|-- Clear Target of PC or "Out of Range" NPC to pick up local 35 radius check mobs.
+	|----------------------------------------------------------------------------------
+	/if (${Target.ID} && (${Target.Type.Equal[pc]} || ${Target.Distance}>35)) {
+		/if (${Target.ID} && (${Target.Type.Equal[pc]})) /message \aoInitial \am[\atTarget\am]\ao mob is out of \am[\atLocal Range \am[\ay35\am]\am]\ao, resetting target !\ax
+		/if (${Target.ID} && (${Target.Distance}>35)) /message \aoInitial \am[\atTarget\am]\ao mob is a \am[\atPC\am]\ao, resetting target !\ax
+		/squelch /target /clear
+	}
+	|----------------------------------------------------------------------------------
+	
+	|--------------------------------------------------
+	|-- MAIN DOCLEARTARGETS LOGIC
 	|--------------------------------------------------
 	/if (${Me.XTarget} || ${Bool[${Spawn[npc radius 35].Aggressive}]} || (${Target.ID} && ${Target.Type.Equal[npc]} && ${Target.Aggressive})) {
-		/ClearTarget usemytarget
-		|/keypress esc
-		/delay 5
 		
 		:gotoloopkeepfighting
 		|------------------------
 		/if (${Me.Sitting} || ${Me.Feigning}) /stand
 		|------------------------
+		
+		|---------------------------------
+		| Cler Target if Target is Corpse.
+		|---------------------------------
+		/if (${Target.Type.Find[corpse]}) {
+			/squelch /target clear
+		}
+		|---------------------------------
 		
 		|--------------------------------------------------------------------------------------------------
 		|-- Call PBAE_Enabled state detection if we have classe(s) and ${DoPBAOE}
@@ -435,8 +439,7 @@ Sub DoClearTargets
 			|------------
 			/if (${CurrentTarget}!=${NearestSpawn[npc radius 35 targetable].ID}) {
 				/if (${Target.ID}!=0) /message \ayTargetting aggressive mob \aoID: \am[\at${NearestSpawn[npc radius 35 targetable].ID}\am] \aoName: \am[\at${NearestSpawn[npc radius 35 targetable].CleanName}\am]\ay and attacking !\ax
-				/ClearTarget usemytarget
-				|/keypress esc
+				/squelch /ClearTarget usemytarget
 				/delay 5
 				/varset CurrentTarget ${NearestSpawn[npc radius 35 targetable].ID}
 			}
@@ -463,8 +466,7 @@ Sub DoClearTargets
 			|------------
 			/if (${CurrentTarget}!=${Target.ID}) {
 				/if (${Target.ID}!=0) /message \ayTargetting aggressive mob \aoID: \am[\at${NearestSpawn[npc radius 35 targetable].ID}\am] \aoName: \am[\at${NearestSpawn[npc radius 35 targetable].CleanName}\am]\ay and attacking !\ax
-				/ClearTarget usemytarget
-				|/keypress esc
+				/squelch /ClearTarget usemytarget
 				/delay 5
 				/varset CurrentTarget ${Target.ID}
 			}
@@ -496,8 +498,7 @@ Sub DoClearTargets
 				|------------
 				/if (${CurrentTarget}!=${Spawn[npc fleeing].ID}) {
 					/if (${Target.ID}!=0) /message \arFound a \am[\atRandom\am]\ar fleeing mob! \ayTargetting \aoID: \am[\at${Me.XTarget[${i}].ID}\am] \ayName\ao: \am[\at${Me.XTarget[${i}].CleanName}\am]\ay and attacking !\ax
-					/ClearTarget usemytarget
-					|/keypress esc
+					/squelch /ClearTarget usemytarget
 					/delay 5
 					/varset CurrentTarget ${Spawn[npc fleeing].ID}
 				}
@@ -541,8 +542,7 @@ Sub DoClearTargets
 							|------------
 							/if (${CurrentTarget}!=${Me.XTarget[${i}].ID}) {
 								/if (${Target.ID}!=0) /message \arFound a \am[\atXTarget\am]\ar fleeing mob! \ayTargetting \aoID: \am[\at${Me.XTarget[${i}].ID}\am] \ayName\ao: \am[\at${Me.XTarget[${i}].CleanName}\am]\ay and attacking !\ax
-								/ClearTarget usemytarget
-								|/keypress esc
+								/squelch /ClearTarget usemytarget
 								/delay 5
 								/varset CurrentTarget ${Me.XTarget[${i}].ID}
 							}
@@ -603,12 +603,6 @@ Sub DoClearTargets
 			|---------------------
 		}		
 		|------------------------------	
-		
-		|------------------------------
-		/if (${Target.Type.Find[corpse]}) {
-			/squelch /target clear
-		}
-		|------------------------------
 			
 		|-------------------------- DO BURNS -----------------------------------------
         /if (${Target.ID} && ${Me.Combat} && ${Target.Type.Equal[npc]} && ${DoBurns}) {
@@ -647,10 +641,13 @@ Sub DoClearTargets
             /goto :gotoloopkeepfighting
         }
 		|-------------------------- DO BURNS -----------------------------------------
+		
 		|--------------------------------------------------
 		/if	(${Me.XTarget} || ${Bool[${Spawn[npc radius 35].Aggressive}]} || (${Target.ID} && ${Target.Type.Equal[npc]} && ${Target.Aggressive})) /goto :gotoloopkeepfighting
 		|--------------------------------------------------
 	}
+	|--------------------------------------------------
+	|-- MAIN DOCLEARTARGETS LOGIC
 	|--------------------------------------------------
 
 	|----------------------
@@ -667,8 +664,6 @@ Sub DoClearTargets
 			/message \aoPBAE is currently \am[\arENABLED\am]\ao, disabling \am[\atPBAE\am]\ao now.\ax
 			/pbaeoff
 	}
-	|------------------------
-	
 	|------------------------
 	
 	|-----------------------------------
@@ -2123,6 +2118,7 @@ Sub Zoning
 		|-------------------------
 		/call CheckCasting
 		/delay 5 !${Me.Moving}	
+		/if (${Me.XTarget} || ${Bool[${Spawn[npc radius 50].Aggressive}]}) /call DoClearTargets	
 		|--------------------------------------------------------------------------------
 		/if (!${Me.XTarget} && !${Me.Casting.ID} && !${Me.Moving} && ${LootMethod.Equal[TURBOLOOT]}) /call LootMob_Turboloot
 		/if (!${Me.XTarget} && !${Me.Casting.ID} && !${Me.Moving} && ${LootMethod.Equal[DCONLY]}) /call LootMob_DC_Only
@@ -2132,7 +2128,7 @@ Sub Zoning
 	}
     /squelch /target clear
 	|-------------------------
-	
+	/if (${Me.XTarget} || ${Bool[${Spawn[npc radius 50].Aggressive}]}) /call DoClearTargets	
     /if (${Bool[${Spawn[Corpse radius 100]}]}) /goto :CheckAgain
   } else {
     /message \ar+++ \ayNo corpse(s) found to loot.\ax
@@ -2519,7 +2515,7 @@ Sub DoorClick
 |--------------------------------------------------------
 Sub Group2Me
 /if (${Debugging}) /echo Sub Group2Me Entry
-	/e3bcgz /nav id ${Me.ID}
+	/squelch /e3bcgz /nav id ${Me.ID}
 /if (${Debugging}) /echo Sub Group2Me Exit
 /return
 |--------------------------------------------------------
@@ -2668,8 +2664,8 @@ Sub GroupWait
 
     /while ((${Group.Member[1].Distance} > 40) || (${Group.Member[2].Distance} > 40) || (${Group.Member[3].Distance} > 40) || (${Group.Member[4].Distance} > 40) || (${Group.Member[5].Distance} > 40) || (${Group.Member[6].Distance} > 40)) {
         /message \aywaiting for the group, timer ${GroupWaitTimer}.\ax
-		/e3bcgz /stand
-		/e3bcgz /nav id ${Me.ID}
+		/squelch /e3bcgz /stand
+		/squelch /e3bcgz /nav id ${Me.ID}
         /delay 5s
 		/varcalc GroupWaitTimer (${GroupWaitTimer})+1
 		/call GroupWaitTimer
@@ -3224,14 +3220,40 @@ Sub CheckGroupClasses
             |-- /message Found a target class: \am[\ay${Group.Member[${i}].Class.ShortName}\am] - \am[\ay${Group.Member[${i}].CleanName}\am] \awin \am[\aytargetClasses\am]\ax.
 			/if (!${Defined[GrpHas${Group.Member[${i}].Class.ShortName}Class]}) {
 				|-- /message \ar--- \agMaking a \am[\atGrpHas${Group.Member[${i}].Class.ShortName}Class\am]\ag DECLARE for class \am[\at${Group.Member[${i}].Class.ShortName}\am]\ax
-				/declare GrpHas${Group.Member[${i}].Class.ShortName}Class	bool	outer	TRUE			
+				/declare GrpHas${Group.Member[${i}].Class.ShortName}Class	bool	outer	TRUE
+				
+				|----------------------------------GrpBRDName
+				/if (${Defined[GrpHasBRDClass]} && ${Group.Member[${i}].Class.ShortName.Equal[BRD]} && !${Defined[GrpBRDName]}) {
+					/declare GrpBRDName string outer ${Group.Member[${i}].CleanName}				
+				} else /if (${Defined[GrpHasBRDClass]} && ${Group.Member[${i}].Class.ShortName.Equal[BRD]} && ${Defined[GrpBRDName]}) {
+					/varset GrpBRDName ${Group.Member[${i}].CleanName}
+				}
+				|----------------------------------GrpBRDName
+
+				|----------------------------------GrpROGName
+				/if (${Defined[GrpHasROGClass]} && ${Group.Member[${i}].Class.ShortName.Equal[ROG]} && !${Defined[GrpROGName]}) {
+					/declare GrpROGName string outer ${Group.Member[${i}].CleanName}				
+				} else /if (${Defined[GrpHasROGClass]} && ${Group.Member[${i}].Class.ShortName.Equal[ROG]} && !${Defined[GrpROGName]}) {
+					/varset GrpROGName ${Group.Member[${i}].CleanName}
+				}
+				|----------------------------------GrpROGName
+				
 				|-- /message \ar--- Created\ao:\aw /declare GrpHas${Group.Member[${i}].Class.ShortName}Class	bool	outer	TRUE
 			}
-			/message \ay+ \agThe group has a \am[\ao${Group.Member[${i}].Class.ShortName}\am] - \am[\at${Group.Member[${i}].CleanName}\am]\ag.
+			/message \ay+ \agThe group has a \am[\ao${Group.Member[${i}].Class.ShortName}\am] - \am[\at${Group.Member[${i}].CleanName}\am]\ag.			
 		}
 		|------------
 	/next i
     }
+	
+	|------------
+	|--/if (${Defined[GrpHasBRDClass]} || ${Defined[GrpHasROGClass]}) {
+	|--	/message ==================================================================
+	|--	/if (${Defined[GrpHasBRDClass]} && ${Defined[GrpBRDName]}) /message \ay+ \agGroup \am[\aoBRD\am] \ayfor \aoINVIS\ay is set to - \am[\at${GrpBRDName}\am]\ag.
+	|--	/if (${Defined[GrpHasROGClass]} && ${Defined[GrpROGName]}) /message \ay+ \agGroup \am[\aoROG\am] \ayfor \aoCOH-SOS\ay is set to - \am[\at${GrpROGName}\am]\ag.	
+	|--}	
+	|------------
+	
 	/message ==================================================================
 	|---------------------------------------------------
 	|---- CREATE DEFAULT CLASS VARIABLES FOR ALL CLASSES
