@@ -380,8 +380,8 @@ Sub DoClearTargets
 	|-- Clear Target of PC or "Out of Range" NPC to pick up local 35 radius check mobs.
 	|----------------------------------------------------------------------------------
 	/if (${Target.ID} && (${Target.Type.Equal[pc]} || ${Target.Distance}>35)) {
-		/if (${Target.ID} && (${Target.Type.Equal[pc]})) /message \aoInitial \am[\atTarget\am]\ao mob is out of \am[\atLocal Range \am[\ay35\am]\am]\ao, resetting target !\ax
-		/if (${Target.ID} && (${Target.Distance}>35)) /message \aoInitial \am[\atTarget\am]\ao mob is a \am[\atPC\am]\ao, resetting target !\ax
+		/if (${Target.ID} && (${Target.Type.Equal[pc]})) /message \ar~Initial~ \am[\atTarget\am]\ao ~ \am[\at${Target.CleanName}\am]\ao is a \am[\atPC\am]\ao, resetting target !\ax		
+		/if (${Target.ID} && (${Target.Distance}>35)) /message \ar~Initial~ \am[\atTarget\am]\ao ~ \am[\at${Target.CleanName}\am]\ao is out of \am[\atLocal Range \am[\ay35\am]\am]\ao, resetting target !\ax
 		/squelch /target /clear
 	}
 	|----------------------------------------------------------------------------------
