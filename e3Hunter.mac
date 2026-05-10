@@ -48,7 +48,7 @@ Sub Main
  	/call Declares
 	/message ==================================================================
 	/message \at${MacroName}.mac \aw- \atv${version} \awby \ag Kroaking
-	/message \at${LastUpdated}.
+	/message \ao${LastUpdated}
 	/message ==================================================================
 	/delay 2s
 
