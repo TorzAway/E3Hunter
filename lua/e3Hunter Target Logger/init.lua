@@ -1,4 +1,3 @@
--- save as: coord_logger.lua (in your Lua scripts folder)
 
 local mq = require('mq')
 local ImGui = require('ImGui')
@@ -6,6 +5,8 @@ local windowOpen = true
 local fileName = 'e3Hunter_ZoneData.ini'
 local filePath = mq.configDir .. '/' .. fileName
 local filePathConfig = mq.configDir .. ''
+countNumber = 1
+target = mq.TLO.Target
 
 local function writeTargetData()
     local me = mq.TLO.Me
@@ -18,7 +19,7 @@ local function writeTargetData()
     local x = target.X() or 0
     local y = target.Y() or 0
     local z = target.Z() or 0
-    target = mq.TLO.Target
+    
     local targetName = 'NO TARGET'
 	
     if target() then
@@ -29,12 +30,12 @@ local function writeTargetData()
     local zoneName = mq.TLO.Zone.Name() or 'UNKNOWN ZONE'
 	
     local line1 = string.format(
-        '\nLoc1=%.2f %.2f %.2f | Zone: %s\n',
-        y, x, z, zoneName
+        '\nLoc'.. countNumber ..'=%.2f %.2f %.2f | Target: %s | Zone: %s\n',
+        y, x, z, targetName, zoneName
     )
 	
 	local line2 = string.format(
-		'Mob1=%s',
+		'Mob'.. countNumber ..'=%s',
         targetName
     )
 	
@@ -48,12 +49,18 @@ local function writeTargetData()
 		f:write(line1)
 		f:write(line2)
 		f:close()
-		print('\am[\atcoord_logger\am] \agWrote data for \am[\ay' .. targetName .. '\am]\ag to\ao: \ar' .. filePath)
+		print('\am[\ate3Hunter Target Logger\am] \agWrote data for \am[\ay' .. targetName .. '\am]\ag to\ao: \ar' .. filePath)
+		countNumber = countNumber + 1
 	end
+	
+end
+
+local function resetCounter()
+	countNumber = 1
 end
 
 local function renderUI()
-    target = mq.TLO.Target
+    
     local targetName = 'NO TARGET'
     if target() then
         -- CleanName is usually best for plain-text logging
@@ -69,7 +76,15 @@ local function renderUI()
 	ImGui.Text('Log current Target\'s Data for e3Hunter:')
 	ImGui.Separator()
 	
-	ImGui.Text('Current Target: '.. targetName)
+	if targetName ~= 'NO TARGET' then
+		ImGui.Text('Current Target: '.. targetName ..' ('.. countNumber ..')')
+	end
+	
+	if ImGui.Button('RESET: LOC/MOB Number: ('.. countNumber ..')') then
+		resetCounter()
+	end
+	
+	ImGui.Separator()
 	
 	if targetName ~= 'NO TARGET' then
 		if ImGui.Button('Write Target Data') then
@@ -84,7 +99,7 @@ local function renderUI()
     ImGui.End()
 end
 
-mq.imgui.init('coord_logger_ui', renderUI)
+mq.imgui.init('e3Hunter_logger_UI', renderUI)
 
 while windowOpen do
     mq.delay(10)
