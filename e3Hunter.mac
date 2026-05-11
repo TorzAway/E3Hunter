@@ -273,7 +273,7 @@ Sub Declares
 	/call CheckINI ${IniFileName} General ReclaimDC bool FALSE
 	/call CheckINI ${IniFileName} General UseClickBuffs bool FALSE
 	/call CheckINI ${IniFileName} General UseClickDamage bool FALSE
-	
+	|------------------------------------------------------------
 	/call CheckINI ${IniFileName} Camp RV_CampRadius int 2500
 	/call CheckINI ${IniFileName} Camp RV_GetMobAtFullHealth int 1
 	/call CheckINI ${IniFileName} Camp RV_Range int 250
@@ -283,23 +283,23 @@ Sub Declares
 	/call CheckINI ${IniFileName} Camp RV_FailMax int 3
 	/call CheckINI ${IniFileName} Camp RV_StepValue int 25
 	/call CheckINI ${IniFileName} Camp RV_SpawnRecheckTimer int 60
-
+	|------------------------------------------------------------
 	/call CheckINI ${IniFileName} Pull PullAbility string ReplaceMeWithYourSkill
 	/call CheckINI ${IniFileName} Pull PullAbilityRange int 30
 	/call CheckINI ${IniFileName} Pull PullRequiresLineOfSight bool TRUE
 	/call CheckINI ${IniFileName} Pull UseCastSpells bool FALSE
-
+	|------------------------------------------------------------
 	/call CheckINI ${IniFileName} Endurance MedEndAt int 8
 	/call CheckINI ${IniFileName} Endurance MedEndTill int 100
-
+	|------------------------------------------------------------
 	/call CheckINI ${IniFileName} Mana MedAt int 30
 	/call CheckINI ${IniFileName} Mana MedTill int 100
 	/call CheckINI ${IniFileName} Mana BardMed bool TRUE
-
+	|------------------------------------------------------------
 	/call CheckINI ${IniFileName} Alerts AFKGM bool TRUE
 	/call CheckINI ${IniFileName} Alerts AFKPC bool TRUE
 	/call CheckINI ${IniFileName} Alerts UseBeep bool TRUE
-
+	|------------------------------------------------------------
 	/call CheckIni ${IniFileName} Zone LastLoc_Zone string NONE
 	/call CheckIni ${IniFileName} Zone LastLoc_Step string 1
 	/call CheckIni ${IniFileName} Zone LastGankLoot_Member string 0
