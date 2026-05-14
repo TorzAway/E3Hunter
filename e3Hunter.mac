@@ -268,7 +268,7 @@ Sub Declares
 	/call CheckINI ${IniFileName} General MouseLock bool TRUE
 	/call CheckINI ${IniFileName} General MouseLocValX int 290
 	/call CheckINI ${IniFileName} General MouseLocValY int 550
-	/call CheckINI ${IniFileName} General NoDropGankItems string NULL
+	/call CheckINI ${IniFileName} General NoDropGankItems string NOTHING
 	/call CheckINI ${IniFileName} General PBAOE_MobCount int 5
 	/call CheckINI ${IniFileName} General ReclaimDC bool FALSE
 	/call CheckINI ${IniFileName} General UseClickBuffs bool FALSE

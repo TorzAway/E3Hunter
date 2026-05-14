@@ -5,8 +5,9 @@ local windowOpen = true
 local fileName = 'e3Hunter_ZoneData.ini'
 local filePath = mq.configDir .. '/' .. fileName
 local filePathConfig = mq.configDir .. ''
-countNumber = 1
-target = mq.TLO.Target
+local target = mq.TLO.Target
+local targetType = mq.TLO.Target.Type
+local countNumber = 1
 
 local function writeTargetData()
     local me = mq.TLO.Me
@@ -45,7 +46,7 @@ local function writeTargetData()
         return
     end
 	
-	if targetName ~= 'NO TARGET' then
+	if targetName ~= 'NO TARGET' and targetType() ~= 'Corpse' and targetType() ~= 'PC' then
 		f:write(line1)
 		f:write(line2)
 		f:close()
@@ -76,7 +77,7 @@ local function renderUI()
 	ImGui.Text('Log current Target\'s Data for e3Hunter:')
 	ImGui.Separator()
 	
-	if targetName ~= 'NO TARGET' then
+	if targetName ~= 'NO TARGET' and targetType() ~= 'Corpse' and targetType() ~= 'PC' then
 		ImGui.Text('Current Target: '.. targetName ..' ('.. countNumber ..')')
 	end
 	
@@ -86,7 +87,7 @@ local function renderUI()
 	
 	ImGui.Separator()
 	
-	if targetName ~= 'NO TARGET' then
+	if targetName ~= 'NO TARGET' and targetType() ~= 'Corpse' and targetType() ~= 'PC' then
 		if ImGui.Button('Write Target Data') then
 			writeTargetData()
 		end
