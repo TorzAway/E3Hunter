@@ -1,8 +1,8 @@
 |****************************************************************************************************************
 e3Hunter.mac - by Kroaking
-Last Updated: May 10th, 2026 - 08:26:00 PM
+Last Updated: June 3rd, 2026 - 09:01:00 PM
 
-v1.4.2
+v1.4.4
 
 ****************************************************************************************************************|
 /squelch /log on
@@ -41,8 +41,8 @@ Sub Main
 	/declare runcounter 		int 		outer	0
 	/declare notkillable		int 		outer	0
 	/declare Announce			bool		outer	FALSE
-	/declare version			string		outer	1.4.2
-	/declare LastUpdated		string		outer	"Last Updated: May 10th, 2026 - 08:26:00 PM"
+	/declare version			string		outer	1.4.4
+	/declare LastUpdated		string		outer	"Last Updated: June 3rd, 2026 - 09:01:00 PM"
 
 	/message ==================================================================
  	/call Declares
@@ -206,6 +206,7 @@ Sub Declares
 	/declare CampX 				int 	outer ${Me.X}
 	/declare CampY 				int 	outer ${Me.Y}
 	/declare CampZ 				int 	outer ${Me.Z}
+	/declare SinglePull_Loc		string	outer
 	/declare DebugRepeatTimer 	timer 	outer 1s
 	/declare DoGroupGankNoDrop	bool 	outer FALSE
 	/declare Endmac 			bool 	outer FALSE
@@ -704,6 +705,7 @@ Sub CheckPBAELogic
 | SUB: DoSinglePull_Any
 | --------------------------------------------------------------------------------------------
 Sub DoSinglePull_Any(string Enemy)
+
 	/if (${Debugging}) /echo DoSinglePull_Any Sub Entry
 	|-------------------------
 	/call CheckCasting
@@ -806,7 +808,19 @@ Sub DoSinglePull_Any(string Enemy)
 		/varset BackUpTimer 0
 		/message \agNavigating to: \ay[\ap${Spawn[${myTargetID}].CleanName}\ay] \agID: \ay[\ap${myTargetID}\ay] \agDistance: \ay[\ap${Spawn[${myTargetID}].Distance}\ay]
 		/if (${Debugging}) /echo \ayNavigating to ${Spawn[${myTargetID}].Name} ID: ${myTargetID} Distance: ${Spawn[${myTargetID}].Distance} > ${If[${PullAbilityRange},${PullAbilityRange},30]} - Line of Sight: ${Spawn[${myTargetID}].LineOfSight}
-		/call WaitNav ${myTargetID}
+		|-----
+		/varset SinglePull_Loc ${Spawn[${myTargetID}].Y} ${Spawn[${myTargetID}].X} ${Spawn[${myTargetID}].Z}
+		|-----
+		/echo MobY=(${MobY}) MobX=(${MobX}) MobZ=(${MobZ}) 
+		/echo SinglePull_Loc=(${SinglePull_Loc}) 
+		
+		
+		|-----
+		/call NavToLoc2 ${SinglePull_Loc}
+		|-----
+		/delay 7
+		/squelch /e3bcgza /nav loc ${SinglePull_Loc}
+		
 		/delay 10
 		/if (${Debugging}) /echo Navigating to the enemy.
 		/call SetLoc
@@ -902,7 +916,7 @@ Sub TargetShortest
 		/delay 5s ${Me.XTarget} == 0
 		/if (!${Me.XTarget}) {
 			/if (!${Announce}) {				
-				/if (!${Me.XTarget}) /call ReturnToCamp
+				/if (!${Me.XTarget} && !${Bool[${Spawn[npc radius 35].Aggressive}]}) /call ReturnToCamp
 				/message No more mobs to pull, lets Wait for Respawn!
 				/varset Announce TRUE
 			}
@@ -918,7 +932,7 @@ Sub TargetShortest
 	/if (${Debugging} && ${BackUpTimer}>1) /echo \arCould Be Stuck ${BackUpTimer}
 	|------------------------
 	/if (${BackUpTimer}>10) {
-		/if (!${Me.XTarget}) /call ReturnToCamp
+		/if (!${Me.XTarget} && !${Bool[${Spawn[npc radius 35].Aggressive}]}) /call ReturnToCamp
 		/delay 1s
 		/message \ayHaving trouble getting to a target.. Attempting to get back on mesh.
 		/if (${Debugging}) /echo Setting BackUpTimer Plus 1
@@ -980,7 +994,7 @@ Sub Combat
 				}
 				/if (!${Me.Casting.ID}) {
 					/for i 1 to ${Me.NumGems}
-						/if (!${Me.XTarget}) /break
+						/if (!${Me.XTarget} && !${Bool[${Spawn[npc radius 35].Aggressive}]}) /break
 						/if (${Me.Gem[${i}].ID}) {
 							/if (${Me.Gem[${i}].TargetType.Equal[Single]} && ${Me.Gem[${i}].SpellType.Equal[Detrimental]} && !${Target.Buff[${Me.Gem[${i}].Name}].ID}) {
 								/cast ${i}
@@ -1086,9 +1100,10 @@ Sub Combat
 | SUB: DoSinglePull_Name
 | --------------------------------------------------------------------------------------------------
 Sub DoSinglePull_Name(string Enemy)
+
 	/if (${Debugging}) /echo DoSinglePull_Name Sub Entry
-	|-----------------------------------------------
 	
+	|-----------------------------------------------
 	/message ==================================================================
 	|------------------------------------------------
 	|--- Remove any comma from the zone name ----
@@ -1136,30 +1151,35 @@ Sub DoSinglePull_Name(string Enemy)
 	:StartNamePulls
 	/doevents
 	/call GetTarget
+	|-- SinglePull_Loc set in the GetTarget Sub.
  
 	|------------------- Initiat Combat LOGIC -----------------|
 	
 	|----------------------------------------------
 	
 	|----------------------------------------------------------
-	/if (!${Me.Combat} && !${Me.XTarget}) {
+	/if (!${Me.Combat} && !${Me.XTarget} && !${Bool[${Spawn[npc radius 35].Aggressive}]}) {
 		|----------------------------------------------
-		|-- Just nav to loc, using NavToLoc function will cause you to engage mobs along the path !
+		|-- Combat and Aggro aware movement.
 		|----------------------------------------------
 		
 		|----------------------------------------------
-		/if (${RV_HasTarget}) {		
+		/if (${RV_HasTarget}) {
+			
 			|-----
-			/if (${Navigation.PathExists[id ${Target.ID}]}) {
-				/squelch /nav id ${Target.ID} 
-				/delay 7
-				/squelch /e3bcgza /nav id ${Target.ID} 
-			} else {
-				/squelch /moveto id ${Target.ID} mdist 10			
-				/delay 7
-				/squelch /e3bcgza /moveto id ${Target.ID} mdist 10
-			}
+			|-- SinglePull_Loc set in the GetTarget Sub.
 			|-----
+			/call NavToLoc2 ${SinglePull_Loc}
+			/delay 5
+			/while (${Navigation.Active}) {
+				/call SetLoc
+				/call CheckStuck
+				/delay 5
+			}			
+			|-----
+			
+			/delay 7
+			/squelch /e3bcgza /nav loc ${SinglePull_Loc}
 		}
 		|----------------------------------------------
 	}
@@ -1189,7 +1209,7 @@ Sub DoSinglePull_Name(string Enemy)
 	|----------------------------------------------------------------	
 	
 	|------------------------------------------
-	/if (!${Me.XTarget} && ${CheckBots}) {
+	/if (!${Me.XTarget} && !${Bool[${Spawn[npc radius 35].Aggressive}]} && ${CheckBots}) {
 		/call GroupDeathChk
 		/call GroupManaChk
 		/call GroupEndChk
@@ -1316,6 +1336,7 @@ Sub DoSinglePull_Name(string Enemy)
 		
         /varset RV_HasTarget 1
         /varset RV_MyTargetName ${Target.CleanName}
+		/varset SinglePull_Loc ${Target.Y} ${Target.X} ${Target.Z}
         /message \ar+\ax Acquired (\at${Target.CleanName}\ax) at range (\ag${Int[${Target.Distance}]}\ax).
         /return
       }
@@ -1540,13 +1561,13 @@ Sub LocPullStepMove(string LocPull_Step)
             /varset mStrLoc (${mNavLocX} ${mNavLocY})
         }
 		 |-------------------------
-		/varset SpawnsAtStep ${SpawnCount[npc loc ${mNavLocX} ${mNavLocY} radius 40]}
+		/varset SpawnsAtStep ${SpawnCount[npc loc ${mNavLocX} ${mNavLocY} radius 30]}
 		|/echo SpawnsAtStep=(${SpawnsAtStep})
 		|/echo  mStrLoc=(${mStrLoc}) | mNavLocY=(${mNavLocY}) | mNavLocYX(${mNavLocX})
 		|------------------------------------------
 
 		|------------------------------------------
-		/if (!${Me.XTarget} && ${CheckBots}) {
+		/if (!${Me.XTarget} && !${Bool[${Spawn[npc radius 35].Aggressive}]} && ${CheckBots}) {
 			/call GroupDeathChk
 			/call GroupManaChk
 			/call GroupEndChk
@@ -1577,13 +1598,11 @@ Sub LocPullStepMove(string LocPull_Step)
 				|--------------------------------------------------------------
 				|/echo \agARRAY RETURNED DATA for step \ay[${x}]\ag: TempSpawnPull_Loc=(\am${TempSpawnPull_Loc})
 				|--------------------------------------------------------------
-				/if (!${Me.Combat} && !${Me.XTarget}) {
+				/if (!${Me.Combat} && !${Me.XTarget} && !${Bool[${Spawn[npc radius 35].Aggressive}]}) {
 					|----------------------------------------------
-					|-- Just nav to loc, using NavToLoc function will cause you to engage mobs along the path !
-					|----------------------------------------------
-					/squelch /nav loc ${TempSpawnPull_Loc}
-					/delay 7
-					/squelch /e3bcgza /nav loc ${TempSpawnPull_Loc}
+					|-- Combat and Aggro aware movement.
+					|----------------------------------------------					
+					/squelch /call NavToLoc2 ${TempSpawnPull_Loc}				
 					|----------------------------------------------
 				}
 				|------------------------------
@@ -1642,7 +1661,7 @@ Sub LocPullStepMove(string LocPull_Step)
 	|----------------------------------------------------------------
 
 	|------------------------------------------
-	/if (!${Me.XTarget} && ${CheckBots}) {
+	/if (!${Me.XTarget} && !${Bool[${Spawn[npc radius 35].Aggressive}]} && ${CheckBots}) {	
 		/call GroupDeathChk
 		/call GroupManaChk
 		/call GroupEndChk
@@ -1711,7 +1730,7 @@ Sub WaitForSpawns
 	/message ==================================================================
 
 	|-----------------------------------------------
-	/if (!${Me.Combat} && !${Me.XTarget}) {
+	/if (!${Me.Combat} && !${Me.XTarget} && !${Bool[${Spawn[npc radius 35].Aggressive}]}) {
 		/delay ${RV_SpawnRecheckTimer}s
 		/call DoClearTargets
 	} else {
@@ -1857,7 +1876,7 @@ Sub NavToLoc(int Y,int X,int Z)
 			/if (${Me.XTarget} || ${Bool[${Spawn[npc radius 35].Aggressive}]}) {
 				/if (${Navigation.Active}) /nav stop
 				/if (${Debugging}) /echo CALL DoSinglePull NavToLoc
-				/call DoSinglePull_Any
+				/call DoSinglePull
 			} else {
 				/if (${CheckBots}) /call GroupDeathChk
 				/if (${CheckBots}) /call GroupManaChk
@@ -1870,7 +1889,7 @@ Sub NavToLoc(int Y,int X,int Z)
 			/if (${Me.XTarget} || ${Bool[${Spawn[npc radius 35].Aggressive}]}) {
 				/if (${Navigation.Active}) /nav stop
 				/if (${Debugging}) /echo CALL FARM STUFF NavToLoc II
-				/call DoSinglePull_Any
+				/call DoSinglePull
 			} else {
 				/if (${CheckBots}) /call GroupDeathChk
 			}
@@ -1892,10 +1911,11 @@ Sub NavToLoc(int Y,int X,int Z)
 | SUB: NavToLoc2 -- [Combat and Agro Aware movement]
 | --------------------------------------------------------------------------------------------
 Sub NavToLoc2(int Y,int X,int Z)
+
 	/if (${Debugging}) /echo Entering Sub NavToLoc2 for ${Y} ${X} ${Z} at Line: ${Macro.CurLine}
 	/varset GroupWaitTimer 0
 	/message \at-- NavToLoc2 \ay[\amCombat & Agro aware movement\ay] \atto \ay[\am${Y} ${X} ${Z}\ay]\at.
-	/while (${Math.Distance[${Me.Y}, ${Me.X}, ${Me.Z}: ${Y}, ${X}, ${Z}]} > 20) {
+	/while (${Math.Distance[${Me.Y}, ${Me.X}, ${Me.Z}: ${Y}, ${X}, ${Z}]} > 20) {	
 		/if (${Navigation.Active}) {
 			/if (${Debugging}) /echo WaitNav Moving ELSE
 			/if (${CheckBots}) /call GroupDeathChk
@@ -1926,7 +1946,7 @@ Sub NavToLoc2(int Y,int X,int Z)
 				/if (${CheckBots}) /call GroupEndChk
 				/call PCnGMCheck
 			}
-			/if (${Me.Combat} && !${Me.XTarget}) /squelch /target clear
+			/if (${Me.Combat} && !${Me.XTarget} && !${Bool[${Spawn[npc radius 35].Aggressive}]}) /squelch /target clear
 			/delay 10
 		} else {
 			/if (${Me.XTarget} || ${Bool[${Spawn[npc radius 35].Aggressive}]}) {
@@ -1949,8 +1969,8 @@ Sub NavToLoc2(int Y,int X,int Z)
 			} else {
 				/if (${CheckBots}) /call GroupDeathChk
 			}
-			/if (${Me.Combat} && !${Me.XTarget}) /squelch /target clear
-			/if (!${Me.Moving} && !${Me.Combat} && !${Me.XTarget}) /squelch /e3bcgza /nav loc ${Y} ${X} ${Z}
+			/if (${Me.Combat} && !${Me.XTarget} && !${Bool[${Spawn[npc radius 35].Aggressive}]}) /squelch /target clear
+			/if (!${Me.Moving} && !${Me.Combat} && !${Me.XTarget} && !${Bool[${Spawn[npc radius 35].Aggressive}]}) /e3bcgza /nav loc ${Y} ${X} ${Z}
 			/delay 5 ${Me.Moving}
 			/delay 5 ${Navigation.Active}
 		}
@@ -1966,14 +1986,14 @@ Sub NavToLoc2(int Y,int X,int Z)
 | --------------------------------------------------------------------------------------------
 Sub WaitNav(NavTargetID)
 	/if (${Debugging}) /echo \agEntering Sub WaitNav for ${Spawn[id ${NavTargetID}].Y} ${Spawn[id ${NavTargetID}].X} ${Spawn[id ${NavTargetID}].Z} at Line: ${Macro.CurLine}
-	/message \at-- WaitNav \ay[\amNo Combat & Agro aware movement\ay] \atto mob id:\ay[\am${NavTargetID}\ay]\at.
+	/message \at-- WaitNav \ay[\amNo Combat & Agro aware STAGGERED movement\ay] \atto mob id:\ay[\am${NavTargetID}\ay]\at.
 	/if (!${Spawn[id ${NavTargetID}].ID}) {
 		/delay 5s
 		/return
 	}
 	/while (${Spawn[id ${NavTargetID}].Distance} > 30 || !${Spawn[${myTargetID}].LineOfSight}) {
 		/if (!${Spawn[id ${NavTargetID}].ID}) {
-			/delay 5s
+			/delay 3s
 			/return
 		}
 		/if (${Spawn[id ${NavTargetID}].Distance} < 30) {
@@ -1983,11 +2003,11 @@ Sub WaitNav(NavTargetID)
 			/call SetLoc
 			/call CheckStuck
 			/call PCnGMCheck
-			/if (${Me.XTarget}) {
+			/if (${Me.XTarget} || ${Bool[${Spawn[npc radius 35].Aggressive}]}) {
 				/if (${Navigation.Active}) /nav stop
-				/varset NavTargetID ${Me.XTarget}
+				/varset NavTargetID ${Spawn[id ${NavTargetID}].ID}
 				/if (${Debugging}) /echo CALL FARM STUFF WaitNAV
-				/call TargetShortest
+				/call DoSingleMob
 			} else {
 				/if (${Debugging}) /echo \ayWaitNav Moving
 				/if (${CheckBots}) /call GroupDeathChk
@@ -1995,7 +2015,7 @@ Sub WaitNav(NavTargetID)
 				/if (${CheckBots}) /call GroupEndChk
 				/call PCnGMCheck
 			}
-			/if (${Me.Combat} && !${Me.XTarget}) /squelch /target clear
+			/if (${Me.Combat} && !${Me.XTarget} && !${Bool[${Spawn[npc radius 35].Aggressive}]}) /squelch /target clear
 			/if (!${courseCorrection}) {
 				|------  ALL GO TO TARGET - staggered
 				/nav id ${NavTargetID}
@@ -2015,10 +2035,10 @@ Sub WaitNav(NavTargetID)
 		} else {
 			/if (${Me.XTarget} || ${Bool[${Spawn[npc radius 35].Aggressive}]}) {
 				/if (${Navigation.Active}) /nav stop
-				/e3bcgza /target id ${Me.XTarget}
-				/varset NavTargetID ${Me.XTarget}
-				/if (${Debugging}) /echo CALL TargetShortest WaitNav II
-				/call TargetShortest
+				/target id ${NearestSpawn[npc radius 35 targetable].ID}
+				/varset NavTargetID ${Target.ID}
+				/if (${Debugging}) /echo CALL DoSingleMob WaitNav II
+				/call DoSingleMob
 			} else {
 				/varcalc BackUpTimer (${BackUpTimer})+1
 				/if (${BackUpTimer}>7) {
@@ -2036,9 +2056,10 @@ Sub WaitNav(NavTargetID)
 				/if (${CheckBots}) /call GroupManaChk
 				/if (${CheckBots}) /call GroupEndChk
 			}
-			/if (${Me.Combat} && !${Me.XTarget}) /squelch /target clear
+			/if (${Me.Combat} && !${Me.XTarget} && !${Bool[${Spawn[npc radius 35].Aggressive}]}) /squelch /target clear
 			/squelch /nav id ${NavTargetID}
 		}
+		/doevents
 	}
 	/if (${Navigation.Active}) /nav stop
 	:target
@@ -2750,7 +2771,7 @@ Sub PCnGMCheck
 	|------------------------------------------------
 }
 
-/if ((${SpawnCount[pc]}>${Math.Calc[${Group.Members}+1]}) && ${AFKPC}) {
+/if ((${SpawnCount[pc radius 500 nopcnogroup]}>0) && ${AFKPC}) {
 	/message \ar WARNING PC's IN ZONE!
 	/if (${UseBeep}) /beep
 	|------------------------------------------------

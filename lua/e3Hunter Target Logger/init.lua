@@ -46,7 +46,7 @@ local function writeTargetData()
         return
     end
 	
-	if targetName ~= 'NO TARGET' and targetType() ~= 'Corpse' and targetType() ~= 'PC' then
+	if targetName ~= 'NO TARGET' and targetType() ~= 'Corpse' and targetType() ~= 'PC' and not target.Pet() then
 		f:write(line1)
 		f:write(line2)
 		f:close()
@@ -77,7 +77,7 @@ local function renderUI()
 	ImGui.Text('Log current Target\'s Data for e3Hunter:')
 	ImGui.Separator()
 	
-	if targetName ~= 'NO TARGET' and targetType() ~= 'Corpse' and targetType() ~= 'PC' then
+	if targetName ~= 'NO TARGET' and targetType() ~= 'Corpse' and targetType() ~= 'PC' and not target.Pet() then
 		ImGui.Text('Current Target: '.. targetName ..' ('.. countNumber ..')')
 	end
 	
@@ -87,7 +87,7 @@ local function renderUI()
 	
 	ImGui.Separator()
 	
-	if targetName ~= 'NO TARGET' and targetType() ~= 'Corpse' and targetType() ~= 'PC' then
+	if targetName ~= 'NO TARGET' and targetType() ~= 'Corpse' and targetType() ~= 'PC' and not target.Pet() then
 		if ImGui.Button('Write Target Data') then
 			writeTargetData()
 		end
