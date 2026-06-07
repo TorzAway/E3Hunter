@@ -1,8 +1,8 @@
 |****************************************************************************************************************
 e3Hunter.mac - by Kroaking
-Last Updated: June 3rd, 2026 - 09:01:00 PM
+Last Updated: June 7th, 2026 - 11:05:00 AM
 
-v1.4.4
+v1.4.5
 
 ****************************************************************************************************************|
 /squelch /log on
@@ -41,8 +41,8 @@ Sub Main
 	/declare runcounter 		int 		outer	0
 	/declare notkillable		int 		outer	0
 	/declare Announce			bool		outer	FALSE
-	/declare version			string		outer	1.4.4
-	/declare LastUpdated		string		outer	"Last Updated: June 3rd, 2026 - 09:01:00 PM"
+	/declare version			string		outer	1.4.5
+	/declare LastUpdated		string		outer	"Last Updated: June 7th, 2026 - 11:05:00 AM"
 
 	/message ==================================================================
  	/call Declares
@@ -53,7 +53,7 @@ Sub Main
 	/delay 2s
 
 	|---------------------------------------------------------------------------
-	/message \ayVALID \aghunting Methods are\ao: \am[\atLOC \ao| \atMOB | \atANY\am]\ax
+	/message \ayVALID \aghunting Methods are\ao: \am[\atLOC \ao| \atMOB \ao| \atANY\am]\ax
 	|---------------------------------------------------------------------------
 
 	|---------------------------------------------------------------------------
@@ -64,7 +64,6 @@ Sub Main
 		/message \am- LastLoc_Zone \ayis set to \at[\ag${LastLoc_Zone}\at]\ax
 		/message \am- LastLoc_Step \ayis set to \at[\ag${LastLoc_Step}\at]\ax
 	}
-	/message ==================================================================
 		
 	|---------------------------------------------------------------------------
 	/if (${HuntMethod.Equal[MOB]}) {
@@ -208,7 +207,6 @@ Sub Declares
 	/declare CampZ 				int 	outer ${Me.Z}
 	/declare SinglePull_Loc		string	outer
 	/declare DebugRepeatTimer 	timer 	outer 1s
-	/declare DoGroupGankNoDrop	bool 	outer FALSE
 	/declare Endmac 			bool 	outer FALSE
 	/declare NoDropMobItem		string	outer	NULL
 	/declare PBAE_State			bool	outer FALSE
@@ -260,11 +258,12 @@ Sub Declares
 	/call CheckINI ${IniFileName} General CheckBots bool TRUE
 	/call CheckINI ${IniFileName} General Debugging bool TRUE
 	/call CheckINI ${IniFileName} General DoBurns bool FALSE
-	/call CheckINI ${IniFileName} General DoPBAOE bool FALSE
+	/call CheckINI ${IniFileName} General DoPBAOE bool FALSE	
+	/call CheckINI ${IniFileName} General DoGroupGankNoDrop bool FALSE
 	/call CheckINI ${IniFileName} General GroupNavToMe bool TRUE
 	/call CheckINI ${IniFileName} General HuntMethod string MOB
 	/call CheckINI ${IniFileName} General LootCorpse bool FALSE
-	/call CheckINI ${IniFileName} General LootMethod string DCONLY
+	/call CheckINI ${IniFileName} General LootMethod string DCHUNTER
 	/call CheckINI ${IniFileName} General MinItemValue int 10
 	/call CheckINI ${IniFileName} General MouseLock bool TRUE
 	/call CheckINI ${IniFileName} General MouseLocValX int 290
@@ -303,7 +302,7 @@ Sub Declares
 	|------------------------------------------------------------
 	/call CheckIni ${IniFileName} Zone LastLoc_Zone string NONE
 	/call CheckIni ${IniFileName} Zone LastLoc_Step string 1
-	/call CheckIni ${IniFileName} Zone LastGankLoot_Member string 0
+	/call CheckIni ${IniFileName} Zone LastGankLoot_Member int 0
 	|** End of E3Hunter.mac/PullFarm.mac type declares **|	
 	
 	|------------------------------------------------------------------------------------------------------------
@@ -1895,7 +1894,13 @@ Sub NavToLoc(int Y,int X,int Z)
 			}
 			/if (${Me.Combat} && !${Me.XTarget}) /squelch /target clear
 			/if (!${Me.Combat} && !${Me.XTarget}) /call Group2Me
-			/if (!${Me.Moving}) /squelch /e3bcgza /nav loc ${Y} ${X} ${Z}
+			|--------------------
+			/if (${Group.Members}>0) {
+				/if (!${Me.Moving}) /squelch /e3bcgza /nav loc ${Y} ${X} ${Z}
+			} else {
+				/if (!${Me.Moving}) /squelch /nav loc ${Y} ${X} ${Z}
+			}
+			|--------------------
 			/delay 5 ${Me.Moving}
 			/delay 5 ${Navigation.Active}
 		}
@@ -1970,7 +1975,13 @@ Sub NavToLoc2(int Y,int X,int Z)
 				/if (${CheckBots}) /call GroupDeathChk
 			}
 			/if (${Me.Combat} && !${Me.XTarget} && !${Bool[${Spawn[npc radius 35].Aggressive}]}) /squelch /target clear
-			/if (!${Me.Moving} && !${Me.Combat} && !${Me.XTarget} && !${Bool[${Spawn[npc radius 35].Aggressive}]}) /e3bcgza /nav loc ${Y} ${X} ${Z}
+			|--------------------
+			/if (${Group.Members}>0) {
+				/if (!${Me.Moving} && !${Me.Combat} && !${Me.XTarget} && !${Bool[${Spawn[npc radius 35].Aggressive}]}) /squelch /e3bcgza /nav loc ${Y} ${X} ${Z}
+			} else {
+				/if (!${Me.Moving} && !${Me.Combat} && !${Me.XTarget} && !${Bool[${Spawn[npc radius 35].Aggressive}]}) /squelch /nav loc ${Y} ${X} ${Z}
+			}
+			|--------------------
 			/delay 5 ${Me.Moving}
 			/delay 5 ${Navigation.Active}
 		}
@@ -2018,7 +2029,7 @@ Sub WaitNav(NavTargetID)
 			/if (${Me.Combat} && !${Me.XTarget} && !${Bool[${Spawn[npc radius 35].Aggressive}]}) /squelch /target clear
 			/if (!${courseCorrection}) {
 				|------  ALL GO TO TARGET - staggered
-				/nav id ${NavTargetID}
+				/squelch /nav id ${NavTargetID}
 				/delay 5
 				/squelch /e3bcgz /nav id ${NavTargetID}
 				|------  ALL GO TO TARGET - staggered
@@ -2143,7 +2154,7 @@ Sub Zoning
 		/if (${Me.XTarget} || ${Bool[${Spawn[npc radius 50].Aggressive}]}) /call DoClearTargets	
 		|--------------------------------------------------------------------------------
 		/if (!${Me.XTarget} && !${Me.Casting.ID} && !${Me.Moving} && ${LootMethod.Equal[TURBOLOOT]}) /call LootMob_Turboloot
-		/if (!${Me.XTarget} && !${Me.Casting.ID} && !${Me.Moving} && ${LootMethod.Equal[DCONLY]}) /call LootMob_DC_Only
+		/if (!${Me.XTarget} && !${Me.Casting.ID} && !${Me.Moving} && ${LootMethod.Equal[DCHUNTER]}) /call LootMob_DC_Hunter
 		/if (!${Me.XTarget} && !${Me.Casting.ID} && !${Me.Moving} && ${LootMethod.Equal[E3]}) /call LootMob_E3
 		/delay 5
 		|--------------------------------------------------------------------------------
@@ -2222,6 +2233,8 @@ Sub Zoning
 	/if (!${Me.XTarget} && !${Bool[${Spawn[npc radius 50].Aggressive}]}) {
 		/message \at+++ \ayLooting - \ag Corpse\ao: \ar[\am${Target.CleanName}\ar] \agID\ao: \ar[\am${Target.ID}\ar].
 		/loot
+		/delay 10
+		/lootall
 	} else {
 		/call DoClearTargets
 	}
@@ -2244,10 +2257,10 @@ Sub Zoning
 | --------------------------------------------------------------------------------------------
 
 | --------------------------------------------------------------------------------------------
-|SUB: LootMob_DC_Only: Standard coin and Diamond Coin
+|SUB: LootMob_DC_Hunter: Standard coin and Diamond Coin
 | --------------------------------------------------------------------------------------------
-  Sub LootMob_DC_Only
-    /if (${Debugging}) /echo Sub LootMob_DC_Only Entry
+  Sub LootMob_DC_Hunter
+    /if (${Debugging}) /echo Sub LootMob_DC_Hunter Entry
 	
 	/declare x  		 			int 	inner	1
 	/declare LootSlot    			int 	inner	0
@@ -2294,7 +2307,7 @@ Sub Zoning
 			
 			|/echo CORPSE ITEM(${LootSlot}):(${Corpse.Item[${LootSlot}].Name})
 			
-			/if ( ${Select[${Corpse.Item[${LootSlot}].Name},${NoDropGankItems}]} ) {
+			/if (${DoGroupGankNoDrop} && (${Group.Members}>0) && ${Select[${Corpse.Item[${LootSlot}].Name},${NoDropGankItems}]}) {
 				|------------------------------------------------------------------------------------------------------------
 				|- READ:  LastGankLoot_Member from ini file, Determine if we GANK
 				|------------------------------------------------------------------------------------------------------------
@@ -2378,7 +2391,7 @@ Sub Zoning
   /if (!${Me.XTarget} && !${Bool[${Spawn[npc radius 50].Aggressive}]}  && !${Me.Casting.ID} && !${Me.Moving}) /call CheckIfBagsFull
   |-------------------------------------------------------------------------------------
 	
-  /if (${Debugging}) /echo Sub LootMob_DC_Only Exit
+  /if (${Debugging}) /echo Sub LootMob_DC_Hunter Exit
   /return
 | --------------------------------------------------------------------------------------------
 
@@ -3211,12 +3224,28 @@ Sub CheckThings
 	|-------------------------		
 	/if (${LootCorpse}) {		
 		/message ==================================================================
-		/message \ay--- \atENABLING\ax \am${MacroName}\ax LOOTING, WE WILL LOOT CORPSE(S).
+		/message \ay--- \atENABLING\ax \am${MacroName}\ax LOOTING, WE WILL LOOT CORPSE(S).	
+		/message \ay--- VALID \aghunting Methods are\ao: \am[\atDCHUNTER \ao| \atE3 \ao| \atTURBOLOOT\am]\ax	
 		/message ==================================================================		
-		/if (${LootMethod.Equal[DCONLY]}) {
+		/if (${LootMethod.Equal[DCHUNTER]}) {		
 			/squelch /lootoff
 			/message \ay--- \agLOOTING METHOD:\ax (\am${LootMethod}\ax) we will only loot\ax
 			/message \ay    [\atDiamond Coin\ay] and \arHIGH VALUE ITEMS \am(\ao>=\at${MinItemValue}\am)\ay.\ax
+			|------------------------------------------------
+			/if (${DoGroupGankNoDrop}) {
+				|--------------------------
+				/if (${Group.Members}>0) {
+					/message \ay    [\aoWE ARE HUNTING FOR\ay] \awNo Drop List\ao: \am[\at${NoDropGankItems}\am]\aw.\ax				
+					/message \ay    Next person to loot a NODROP match is: \am[\at${Group.Member[${LastGankLoot_Member}].CleanName}\am]\ay.\ax			
+				} else {
+					/message \ar    --- We are set to loot nodrop but NOT in a GROUP !!!!!
+					/message \ar    --- DISABLING NODROP LOOTING.
+					/varset DoGroupGankNoDrop FALSE
+				}				
+				|--------------------------
+			} else {
+				/message \ay    [\aoWE ARE CUURENTLY NOT HUNTING FOR ANY ITEMS\ay]\ax
+			}
 			|------------------------------------------------
 		}  
 		/if (${LootMethod.Equal[E3]}) {
