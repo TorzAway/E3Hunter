@@ -1,8 +1,8 @@
 |****************************************************************************************************************
 e3Hunter.mac - by Kroaking
-Last Updated: June 7th, 2026 - 11:05:00 AM
+Last Updated: June 10th, 2026 - 07:35:00 PM
 
-v1.4.5
+v1.4.6
 
 ****************************************************************************************************************|
 /squelch /log on
@@ -21,7 +21,7 @@ v1.4.5
 
 #event NavMeshReload "#*#Could not locate destination on navmesh#*#"
 
-#event TurboLootDone "#*# tells the group, '[DONE LOOTING]'#*#"
+#event TurboLootDone "#*# tells the group, '[DONE LOOTING#*#]'#*#"
 
 #define /message "/echo \ay[\atE3Hunter\ay]\aw "
 
@@ -41,8 +41,8 @@ Sub Main
 	/declare runcounter 		int 		outer	0
 	/declare notkillable		int 		outer	0
 	/declare Announce			bool		outer	FALSE
-	/declare version			string		outer	1.4.5
-	/declare LastUpdated		string		outer	"Last Updated: June 7th, 2026 - 11:05:00 AM"
+	/declare version			string		outer	1.4.6
+	/declare LastUpdated		string		outer	"Last Updated: June 10th, 2026 - 07:35:00 PM"
 
 	/message ==================================================================
  	/call Declares
@@ -3244,7 +3244,7 @@ Sub CheckThings
 				}				
 				|--------------------------
 			} else {
-				/message \ay    [\aoWE ARE CUURENTLY NOT HUNTING FOR ANY ITEMS\ay]\ax
+				/message \ay    [\aoWE ARE CURRENTLY NOT HUNTING FOR ANY ITEMS\ay]\ax
 			}
 			|------------------------------------------------
 		}  
@@ -3266,7 +3266,7 @@ Sub CheckThings
 				/end
 			}			
 			|-------------
-			/message \ay    [ Looter cuurently set to: \am[\at${TurboLooter}\am]\ay   ]			
+			/message \ay    [ Looter curently set to: \am[\at${TurboLooter}\am]\ay   ]			
 		}		
 		/message ==================================================================
 		/delay 3s
