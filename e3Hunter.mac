@@ -1,8 +1,8 @@
 |****************************************************************************************************************
 e3Hunter.mac - by Kroaking
-Last Updated: June 10th, 2026 - 07:35:00 PM
+Last Updated: June 14th, 2026 - 02:19:00 PM
 
-v1.4.6
+v1.4.7
 
 ****************************************************************************************************************|
 /squelch /log on
@@ -41,8 +41,8 @@ Sub Main
 	/declare runcounter 		int 		outer	0
 	/declare notkillable		int 		outer	0
 	/declare Announce			bool		outer	FALSE
-	/declare version			string		outer	1.4.6
-	/declare LastUpdated		string		outer	"Last Updated: June 10th, 2026 - 07:35:00 PM"
+	/declare version			string		outer	1.4.7
+	/declare LastUpdated		string		outer	"Last Updated: June 14th, 2026 - 02:19:00 PM"
 
 	/message ==================================================================
  	/call Declares
@@ -254,6 +254,7 @@ Sub Declares
 	|** End color declarations **|
 
 	|** Start of E3Hunter.mac/PullFarm.mac type declares **|
+
 	/call CheckINI ${IniFileName} General AssistMe bool TRUE
 	/call CheckINI ${IniFileName} General CheckBots bool TRUE
 	/call CheckINI ${IniFileName} General Debugging bool TRUE
@@ -263,7 +264,7 @@ Sub Declares
 	/call CheckINI ${IniFileName} General GroupNavToMe bool TRUE
 	/call CheckINI ${IniFileName} General HuntMethod string MOB
 	/call CheckINI ${IniFileName} General LootCorpse bool FALSE
-	/call CheckINI ${IniFileName} General LootMethod string DCHUNTER
+	/call CheckINI ${IniFileName} General LootMethod string DCHUNTER	
 	/call CheckINI ${IniFileName} General MinItemValue int 10
 	/call CheckINI ${IniFileName} General MouseLock bool TRUE
 	/call CheckINI ${IniFileName} General MouseLocValX int 290
@@ -1691,13 +1692,9 @@ Sub ReturnToCamp
 	/message ==================================================================
 	/message \ag+++\ax \aoCompleted \ar${HuntMethod} \agCycle:\ax \ao...\ax \atRETURNING TO CAMP !!!\ax
 	/message ==================================================================
-	|-----------------------
-	/if (${Group.Members}>0) {
-			/squelch /e3bcgza /nav loc ${CampReturnLoc}
-	} else {
-			/squelch /nav loc ${CampReturnLoc}
-	}
-	|-----------------------
+	|-----
+	/call NavToLoc2 ${CampReturnLoc}
+	|-----
 	/delay 5
 	
 	:WaitTillAtCamp
@@ -2807,8 +2804,12 @@ Sub PC_CheckMode
 
 /if (${UseBeep}) /beep
 /message [WaitForZonePCs] Crowded — ${SpawnCount[pc]} PCs (waiting for < ${Math.Calc[${Group.Members}+1]})...
-/delay 10s
-/if (${SpawnCount[pc]}>${Math.Calc[${Group.Members}+1]}) /goto :WaitForLowPopulation
+
+/while (${SpawnCount[pc radius 500 nopcnogroup]}>${Math.Calc[${Group.Members}+1]}) {
+	/if (${UseBeep}) /beep
+	/if (${Me.XTarget} || ${Bool[${Spawn[npc radius 35].Aggressive}]}) /call DoClearTargets	
+	/delay 3s	
+}
 
 :ResumePC
 /message [WaitForZonePCs] Clear — ${SpawnCount[pc]} PCs. Continuing.
@@ -2828,8 +2829,12 @@ Sub GM_CheckMode
 
 /if (${UseBeep}) /beep
 /message [WaitForNoGM] HEY !!! — GM IS IN ZONE !!!)...
-/delay 10s
-/if (${Spawn[gm].ID}) /goto :WaitForNoGM
+
+/while (${Spawn[gm].ID}) {
+	/if (${UseBeep}) /beep	
+	/if (${Me.XTarget} || ${Bool[${Spawn[npc radius 35].Aggressive}]}) /call DoClearTargets	
+	/delay 3s
+}
 
 :ResumeGM
 /message [WaitForNoGM] Clear — NO GM. Continuing.
