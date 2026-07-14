@@ -1,8 +1,8 @@
 |****************************************************************************************************************
 e3Hunter.mac - by Kroaking
-Last Updated: June 14th, 2026 - 02:19:00 PM
+Last Updated: July 14th, 2026 - 11:14:00 AM
 
-v1.4.7
+v1.4.8
 
 ****************************************************************************************************************|
 /squelch /log on
@@ -41,8 +41,8 @@ Sub Main
 	/declare runcounter 		int 		outer	0
 	/declare notkillable		int 		outer	0
 	/declare Announce			bool		outer	FALSE
-	/declare version			string		outer	1.4.7
-	/declare LastUpdated		string		outer	"Last Updated: June 14th, 2026 - 02:19:00 PM"
+	/declare version			string		outer	1.4.8
+	/declare LastUpdated		string		outer	"Last Updated: July 14th, 2026 - 11:14:00 AM"
 
 	/message ==================================================================
  	/call Declares
@@ -3252,11 +3252,23 @@ Sub CheckThings
 				/message \ay    [\aoWE ARE CURRENTLY NOT HUNTING FOR ANY ITEMS\ay]\ax
 			}
 			|------------------------------------------------
+			|--------------------------------------------------
+			/if (${Lua.Script[turbo].Status.Equal[Running]}) {
+				/message \ao--- \agLOOTING METHOD:\ax (\am${LootMethod}\ax) DISABLING TURBOLOOT LUA.
+				/lua stop turbo
+			}						
+			|--------------------------------------------------			
 		}  
 		/if (${LootMethod.Equal[E3]}) {
 			/squelch /looton
 			/message \ay--- \agLOOTING METHOD:\ax (\am${LootMethod}\ax) we will only loot according to \am${LootMethod}\ax settings.
 			/message \ay    [ If configured in your \am${LootMethod}\ax config files. \ag("Loot Settings.ini")\ax ]
+			|--------------------------------------------------
+			/if (${Lua.Script[turbo].Status.Equal[Running]}) {
+				/message \ao--- \agLOOTING METHOD:\ax (\am${LootMethod}\ax) DISABLING TURBOLOOT LUA.
+				/lua stop turbo
+			}						
+			|--------------------------------------------------
 		}
 		/if (${LootMethod.Equal[TURBOLOOT]}) {
 			/squelch /lootoff
