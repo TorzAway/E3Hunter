@@ -195,6 +195,7 @@ Sub Declares
 	/declare MacroName			string	outer	e3Hunter
 	/declare IniFileName		string	outer	${MacroName}_${Me.CleanName}.ini
 	/declare ZoneDataFileName	string	outer	${MacroName}_ZoneData.ini
+	/declare LootDataFileName	string	outer	${MacroName}_LootData.ini
 	/declare FirstRun			int		outer	0
 
 	|--------------------------------------
@@ -1179,21 +1180,17 @@ Sub DoSinglePull_Name(string Enemy)
 				/delay 5
 			}			
 			|-----
-			
-			/delay 7
-			/squelch /e3bcgza /nav loc ${SinglePull_Loc}
+			| NOTE: Removed redundant second "/nav loc ${SinglePull_Loc}" re-pull here.
+			| NavToLoc2 already closes distance to within 20 units before returning,
+			| so re-issuing a full nav command to the same point just re-paid the
+			| nav engine spin-up + travel cost for that last stretch a second time.
 		}
 		|----------------------------------------------
 	}
 	|------------------------------
-	/while (${Navigation.Active}) {
-		/call SetLoc
-		/call CheckStuck
-		/delay 5
-	}
-	|------------------------------
-	/squelch /e3bcgz /nav id ${Me.ID}
-	/delay 5
+	| NOTE: Removed the extra "/nav id ${Me.ID}" (nav-to-self) call and its
+	| follow-up wait loop. Navving to yourself has nothing to travel and was
+	| just adding another round of nav-engine overhead before combat started.
 	|----------------------------------------------------------
 	
 				
@@ -1273,8 +1270,7 @@ Sub DoSinglePull_Name(string Enemy)
     |/echo Mob array size = ${RV_MobArray.Size}
     |/echo RV_TargetSub = ${RV_TargetSub}
     |/echo Mob to target: "${RV_MobArray[${RV_TargetSub}]}"
-
-      /message - Looking for: (\at${RV_MobArray[${RV_TargetSub}]}\ax) distance (\ag${RV_CurrentRadius}\ax).
+      /message - Looking for: \ayMob \am(\ag${RV_TargetSub}\am) \ayof \am(\ag${RV_MobArray.Size}\am) \am(\at${RV_MobArray[${RV_TargetSub}]}\am) \aydistance \am(\ag${RV_CurrentRadius}\am)\ay.\ax
     |/echo Will use: /squelch /target targetable radius ${RV_CurrentRadius} notid ${RV_InvalidTargetID} npc "${RV_MobArray[${RV_TargetSub}]}"
     
     /squelch /target targetable radius ${RV_CurrentRadius} notid ${RV_InvalidTargetID} npc "${RV_MobArray[${RV_TargetSub}]}"
@@ -1385,6 +1381,7 @@ Sub DoSinglePull_Name(string Enemy)
 		/timed 20 /squelch /e3bcg /pet swarm
 	}
 	|----------------------------------------
+	/squelch /stick 10
   }  
   |------------------------------------------------------
   
@@ -1454,6 +1451,7 @@ Sub DoSinglePull_Name(string Enemy)
 | --------------------------------------------------------------------------------------------------
   Sub ReadINIfile(FileName,SectionName,ArrayType)
   
+  /message ==================================================================		
   /message \ayAttempting to Read Section "[\ag${SectionName}\ay]" Zone Information from \at${FileName}\ay...
   /delay 1s
 
@@ -1465,11 +1463,12 @@ Sub DoSinglePull_Name(string Enemy)
   }
   |------------------------------------------------------
 
-  /declare nValues     int local  1
-  /declare nArray      int local  0
-  /declare KeySet      string local  ${Ini[${FileName},${SectionName}]}
-  /declare TempMobArrayVal string local null
-  /declare TempLocArrayVal string local null
+  /declare nValues     		int local  1
+  /declare nArray      		int local  0
+  /declare KeySet      		string local  ${Ini[${FileName},${SectionName}]}
+  /declare TempMobArrayVal 	string local null
+  /declare TempLocArrayVal 	string local null
+  /declare TempLootArrayVal	string local null
 
 :CounterLoop
   /if (!${KeySet.Arg[${nValues},|].Length}) {
@@ -1514,6 +1513,23 @@ Sub DoSinglePull_Name(string Enemy)
 	/message ==================================================================	
   }
   |------------------------------------------------------------------------------------------
+  
+  |------------------------------------------------------------------------------------------
+  /if (${ArrayType.Equal[Loot]} && ${FileName.Equal["${LootDataFileName}"]} && ${nValues}>0) {
+    /message ==================================================================
+	/message \ayDeclaring Loot Array...
+    /declare RV_LootArray[${nValues}]   string outer
+	/message ==================================================================
+	/for nArray 1 to ${nValues}
+		/if (${FileName.Equal["${LootDataFileName}"]}) {
+			/varset TempLootArrayVal ${Ini[${FileName},${SectionName},${ArrayType}${nArray}]}
+			/if (!${TempLootArrayVal.Equal[NULL]}) /varset RV_LootArray[${nArray}] ${Ini[${FileName},${SectionName},${ArrayType}${nArray}]}
+			/if (!${TempLootArrayVal.Equal[NULL]}) /message \atRV_LootArray[${nArray}]\ax \ay${Ini[${FileName},${SectionName},${ArrayType}${nArray}]}\ax
+		}	
+	/next nArray
+	/message ==================================================================	
+  }
+  |------------------------------------------------------------------------------------------  
   
   /message "${SectionName}" Zone Information Read Successfully from ${FileName}...
   /delay 5
@@ -1985,7 +2001,10 @@ Sub NavToLoc2(int Y,int X,int Z)
 			/delay 5 ${Navigation.Active}
 		}
 	}
-	/delay 2s
+	| NOTE: Was a flat "/delay 2s" here every time regardless of state.
+	| Now only waits while navigation is actually still active, and stops
+	| immediately once it's not - saving ~2s of dead time per pull.
+	/delay 5 !${Navigation.Active}
 	/if (${Navigation.Active}) /nav stop
 	/if (${Debugging}) /echo Sub NavToLoc2 Exit
 /return
@@ -2126,8 +2145,8 @@ Sub Zoning
   |------------------
   /if (${MouseLock}) /mouseto ${MouseLocValX}, ${MouseLocValY}
   |------------------
-  |/hidecorpse looted
-  /hidecorpse none
+  /if (${LootMethod.Equal[E3]}) /hidecorpse looted
+  /if (!${LootMethod.Equal[E3]}) /hidecorpse none
   |------------------
 
   /squelch /target radius 100 corpse
@@ -2233,7 +2252,7 @@ Sub Zoning
 		/message \at+++ \ayLooting - \ag Corpse\ao: \ar[\am${Target.CleanName}\ar] \agID\ao: \ar[\am${Target.ID}\ar].
 		/loot
 		/delay 10
-		/lootall
+		|--/lootall
 	} else {
 		/call DoClearTargets
 	}
@@ -2261,12 +2280,13 @@ Sub Zoning
   Sub LootMob_DC_Hunter
     /if (${Debugging}) /echo Sub LootMob_DC_Hunter Entry
 	
-	/declare x  		 			int 	inner	1
-	/declare LootSlot    			int 	inner	0
-    /declare LootCheck  			int 	inner	0
-    /declare LootTotal   			int 	inner	0
-	/declare CursorItemValueInPlat	int 	inner	0
-	/declare NoDropMobID			int		inner	0
+	/declare x  		 			int 	local	1
+	/declare LootSlot    			int 	local	0
+    /declare LootCheck  			int 	local	0
+    /declare LootTotal   			int 	local	0
+	/declare CursorItemValueInPlat	int 	local	0
+	/declare NoDropMobID			int		local	0
+	/declare LootArraySub			int		local	0
 	
 	/if (${Target.ID} && ${Target.Type.Equal[Corpse]}) /face fast nolook
     /keypress forward
@@ -2324,7 +2344,7 @@ Sub Zoning
 				|------------------------------------------------------------------------------------------------------------
 				
 			} else {
-			|--- BEGIN - LOOT AND HANDLE CURSOR ITEM
+				|--- BEGIN - LOOT AND HANDLE CURSOR ITEM
 				/message \ay-- Grabbing corpse item (\am${LootSlot}\ax) of (\am${LootTotal}\ax).				
 				/nomodkey /shift /itemnotify Loot${LootSlot} leftmouseup
 				/delay 5 ${Cursor.ID}
@@ -2340,15 +2360,23 @@ Sub Zoning
 				|--------------------------------------------------------
 				|---- ALL VALUABLE STACKABLE LOOT THAT DROPS IN THIS ZONE
 				|--------------------------------------------------------	
-				/if (${Cursor.ID}) {			
+				/if (${Cursor.ID}) {
+					|--- DIAMOND COIN LOOT
 					/if (${Cursor.Name.Equal[Diamond Coin]}) {
 						/message \at+\ax \agKeeping a\ax \ay(\atDiamond Coin\ay) \ag worth \ay(\at${CursorItemValueInPlat}\ay)\ag platinum ... WOOT!\ax
 						/autoinventory 
 						/delay 5 !${Cursor.ID}
-					} else /if (${CursorItemValueInPlat}>=${MinItemValue}) {
-						/message \at+\ax \agKeeping a\ax \ay(\at${Cursor.Name}\ay) \ag worth \ay(\at${CursorItemValueInPlat}\ay)\ag platinum ... WOOT!\ax
-						/autoinventory 
-						/delay 5 !${Cursor.ID}
+					|--- LOOT ARRAY LOOTING
+					} else {
+						|------------------------------------------
+						/for LootArraySub 1 to ${RV_LootArray.Size}
+							/if (${Cursor.Name.Equal[${RV_LootArray[${LootArraySub}]}]}) {
+								/message \at+\ax \agKeeping a\ax \ay(\at${Cursor.Name}\ay)\ag, it is in our zone loot array!\ax						
+								/autoinventory 
+								/delay 5 !${Cursor.ID}
+							}							
+						/next LootArraySub
+						|------------------------------------------					
 					}
 				}
 				|--------------------------------------------------------
@@ -2357,7 +2385,7 @@ Sub Zoning
 				|---- DESTROY ANYTHING REMAINING
 				|--------------------------------------------------------
 				/if (${Cursor.ID}) {
-					/message \ar-\ax \arDestroying a\ax \ay(\at${Cursor.Name}\ay)\ar, that crap is woth less than \ay(\at${MinItemValue}\ay)\ar plat!\ag Sell Val\ao:\at(\ay${CursorItemValueInPlat}\at)\ay.
+					/message \ar-\ax \arDestroying a\ax \ay(\at${Cursor.Name}\ay)\ay.
 					/destroy
 					/delay 5 !${Cursor.ID}
 				}
@@ -2402,7 +2430,7 @@ Sub Zoning
    
 	|/echo GankMob_ID=(${GankMob_ID}) | GankMob_Item=(${GankMob_Item})
   
-	/declare NextGankLoot_Member int inner 0
+	/declare NextGankLoot_Member int local 0
   
 	|------------------------------------------------------------------------------------------------------------
 	|- READ:  LastGankLoot_Member from ini file.
@@ -3234,25 +3262,38 @@ Sub CheckThings
 		/message \ay--- \atENABLING\ax \am${MacroName}\ax LOOTING, WE WILL LOOT CORPSE(S).	
 		/message \ay--- VALID \aghunting Methods are\ao: \am[\atDCHUNTER \ao| \atE3 \ao| \atTURBOLOOT\am]\ax	
 		/message ==================================================================		
+		|-----------------------------------------------------------------------------------------------------------------------------
 		/if (${LootMethod.Equal[DCHUNTER]}) {		
+			/e3varset ShouldLoot false
 			/squelch /lootoff
 			/message \ay--- \agLOOTING METHOD:\ax (\am${LootMethod}\ax) we will only loot\ax
-			/message \ay    [\atDiamond Coin\ay] and \arHIGH VALUE ITEMS \am(\ao>=\at${MinItemValue}\am)\ay.\ax
+			/message \ay    [\atDiamond Coin\ay] and \arSPECIFIC ZONE DEFINED ITEMS\ay.\ax
+			
+			
+			|------------------------------------------------------------
+			|Loot Array Information.
+			|------------------------------------------------------------
+			/call ReadINIFile ${LootDataFileName} "${ValidZoneName}" Loot
+			/if (!${Defined[RV_LootArray]}) {
+				/message Loot Array Creation Error, ending macro...
+				/endmacro
+			}
+			|------------------------------------------------------------			
+			
 			|------------------------------------------------
 			/if (${DoGroupGankNoDrop}) {
 				|--------------------------
 				/if (${Group.Members}>0) {
-					/message \ay    [\aoWE ARE HUNTING FOR\ay] \awNo Drop List\ao: \am[\at${NoDropGankItems}\am]\aw.\ax				
+					/message \ay    [\aoWE ARE HUNTING FOR\ay] \awNo Drop List\ao: \am[\at${NoDropGankItems}\am]\aw.\ax					
 					/message \ay    Next person to loot a NODROP match is: \am[\at${Group.Member[${LastGankLoot_Member}].CleanName}\am]\ay.\ax			
+					/message \ag    We will also loot from the Zone-Wide LootList Array.
 				} else {
 					/message \ar    --- We are set to loot nodrop but NOT in a GROUP !!!!!
 					/message \ar    --- DISABLING NODROP LOOTING.
 					/varset DoGroupGankNoDrop FALSE
 				}				
 				|--------------------------
-			} else {
-				/message \ay    [\aoWE ARE CURRENTLY NOT HUNTING FOR ANY ITEMS\ay]\ax
-			}
+			} 
 			|------------------------------------------------
 			|--------------------------------------------------
 			/if (${Lua.Script[turbo].Status.Equal[Running]}) {
@@ -3262,8 +3303,11 @@ Sub CheckThings
 				/lua stop turbo
 			}						
 			|--------------------------------------------------			
-		}  
+		}
+		|-----------------------------------------------------------------------------------------------------------------------------
+		|-----------------------------------------------------------------------------------------------------------------------------
 		/if (${LootMethod.Equal[E3]}) {
+			/e3varset ShouldLoot true
 			/squelch /looton
 			/message \ay--- \agLOOTING METHOD:\ax (\am${LootMethod}\ax) we will only loot according to \am${LootMethod}\ax settings.
 			/message \ay    [ If configured in your \am${LootMethod}\ax config files. \ag("Loot Settings.ini")\ax ]
@@ -3276,7 +3320,10 @@ Sub CheckThings
 			}						
 			|--------------------------------------------------
 		}
+		|-----------------------------------------------------------------------------------------------------------------------------
+		|-----------------------------------------------------------------------------------------------------------------------------
 		/if (${LootMethod.Equal[TURBOLOOT]}) {
+			/e3varset ShouldLoot false
 			/squelch /lootoff
 			/message \ay--- \agLOOTING METHOD:\ax (\am${LootMethod}\ax) we will only loot according to \am${LootMethod}\ax settings.
 			/message \ay    [ If configured in your \am${LootMethod}\ax config files. \ag(turboloot.ini)\ax ]
@@ -3290,10 +3337,12 @@ Sub CheckThings
 			}			
 			|-------------
 			/message \ay    [ Looter curently set to: \am[\at${TurboLooter}\am]\ay   ]			
-		}		
+		}
+		|-----------------------------------------------------------------------------------------------------------------------------		
 		/message ==================================================================
 		/delay 3s
 	} else {
+		/e3varset ShouldLoot false
 		/squelch /lootoff
 		/message ==================================================================
 		/message \ar--- DISABLING \am${MacroName}\ar LOOTING, YOU WILL NOT LOOT CORPSE(S)!
@@ -3708,6 +3757,7 @@ Sub ReclaimAltDC
 			/message \ar --- DISABLING ${MacroName} LOOTING, YOU WILL NOT LOOT CORPSES !
 			/message ==================================================================
 			/squelch /lootoff
+			/echo 444
 		}
 		|--------------------------------------------
 		/varset BagsAreFull FALSE
