@@ -1,8 +1,8 @@
 |****************************************************************************************************************
 e3Hunter.mac - by Kroaking
-Last Updated: July 17th, 2026 - 04:05:00 PM
+Last Updated: July 29th, 2026 - 09:52:00 AM
 
-v1.4.9
+v1.5.0
 
 ****************************************************************************************************************|
 /squelch /log on
@@ -43,8 +43,8 @@ Sub Main
 	/declare runcounter 		int 		outer	0
 	/declare notkillable		int 		outer	0
 	/declare Announce			bool		outer	FALSE
-	/declare version			string		outer	1.4.9
-	/declare LastUpdated		string		outer	"Last Updated: July 17th, 2026 - 04:05:00 PM"
+	/declare version			string		outer	1.5.0
+	/declare LastUpdated		string		outer	"Last Updated: July 29th, 2026 - 09:52:00 AM"
 
 	/message ==================================================================
  	/call Declares
@@ -211,10 +211,10 @@ Sub Declares
 	/declare SinglePull_Loc		string	outer
 	/declare DebugRepeatTimer 	timer 	outer 1s
 	/declare Endmac 			bool 	outer FALSE
-	/declare NoDropMobItem		string	outer	NULL
 	/declare PBAE_State			bool	outer FALSE
 	/declare SitDelay 			timer 	outer 5s
 	/declare Targets 			string 	outer
+	/declare HaveNodropToLoot	bool	outer FALSE
 	/declare TurboLootPause		bool	outer FALSE
 	/declare ValidZoneName 		string 	outer ${Zone.Name}
 	/declare courseCorrection 	timer 	outer 1s
@@ -2280,13 +2280,18 @@ Sub Zoning
   Sub LootMob_DC_Hunter
     /if (${Debugging}) /echo Sub LootMob_DC_Hunter Entry
 	
-	/declare x  		 			int 	local	1
 	/declare LootSlot    			int 	local	0
-    /declare LootCheck  			int 	local	0
     /declare LootTotal   			int 	local	0
 	/declare CursorItemValueInPlat	int 	local	0
+	/declare NoDropItemNum			Int		local	0
 	/declare NoDropMobID			int		local	0
 	/declare LootArraySub			int		local	0
+
+	|------------------------------------------------------------------------------------------------------------
+	|- READ:  LastGankLoot_Member from ini file.
+	|------------------------------------------------------------------------------------------------------------
+	/varset LastGankLoot_Member ${Ini[${IniFileName},Zone,LastGankLoot_Member]}
+	|------------------------------------------------------------------------------------------------------------
 	
 	/if (${Target.ID} && ${Target.Type.Equal[Corpse]}) /face fast nolook
     /keypress forward
@@ -2312,106 +2317,116 @@ Sub Zoning
     /doevents
 	|-------------------------------------
 
-	|--------------------------------------
+	|-------------------------------------- CORPSE1
     /if (${Corpse.Items}) {
 		/varset LootTotal ${Corpse.Items}
 		/message \ay++ Corpse has (\at${LootTotal}\ay) item(s) on it to loot.
-		|---------------------------------------
+		
+		|---------------------------------------  FOR1
 		/for LootSlot 1 to ${LootTotal}
+						
+			|/echo CORPSE ITEM (${LootSlot}): (${Corpse.Item[${LootSlot}].Name})	
 			
-			|--------------------------------------------------------
-			|---- HANDLE NODROP GANK HUNTED ITEM
-			|---- RETURN BACK CORPSE ITEM DATA HERE.
-			|--------------------------------------------------------			
-			
-			|/echo CORPSE ITEM(${LootSlot}):(${Corpse.Item[${LootSlot}].Name})
-			
-			/if (${DoGroupGankNoDrop} && (${Group.Members}>0) && ${Select[${Corpse.Item[${LootSlot}].Name},${NoDropGankItems}]}) {
+			|--------------------------------------------------------				
+			/if (${DoGroupGankNoDrop} && (${LastGankLoot_Member}<999) && ${Select[${Corpse.Item[${LootSlot}].Name},${NoDropGankItems}]}) {
 				|------------------------------------------------------------------------------------------------------------
 				|- READ:  LastGankLoot_Member from ini file, Determine if we GANK
-				|------------------------------------------------------------------------------------------------------------
-				/varset LastGankLoot_Member ${Ini[${IniFileName},Zone,LastGankLoot_Member]}
-				/varset NoDropMobItem ${Corpse.Item[${LootSlot}].Name}
+				|------------------------------------------------------------------------------------------------------------								
 				/varset NoDropMobID ${Target.ID}
+				/varset NoDropItemNum ${Corpse.Item[${LootSlot}].ID}
+				/varset HaveNodropToLoot TRUE
+				/message \ao+++ \awITEM \am(\ay${Corpse.Item[${LootSlot}].Name}\am) \awIS NODROP -- FLAGGING FOR PICKUP.\ax
+				/goto :ByPassNextSlot			
+				|---------------------
+			}			
+			|--------------------------------------------------------
+			
+			|--------------------------------------------------------
+			|--- BEGIN - LOOT AND HANDLE CURSOR ITEM
+			|--------------------------------------------------------
+			
+			/message \ay-- Grabbing corpse item (\am${LootSlot}\ax) of (\am${LootTotal}\ax).				
+			/nomodkey /shift /itemnotify Loot${LootSlot} leftmouseup
+			/delay 5 ${Cursor.ID}
+			/if (${Window[QuantityWnd].Open}) /notify QuantityWnd QTYW_Accept_Button leftmouseup
+			/delay 5
 	
-				/if (${LastGankLoot_Member}<6) {
-					/message \at+\ax \agKeeping a\ax \ay(\at${Corpse.Item[${LootSlot}].Name}\ay) \ag because it's a \arNO DROP\ax that I need to \amGANK\ax !\ax
-					/varset DoGroupGankNoDrop TRUE									
-				} else {
-					/message \at+\ax \ay(\at${Corpse.Item[${LootSlot}].Name}\ay)\ag dropped, but everyone has one, \amSKIPPING\ax.
-					/varset DoGroupGankNoDrop FALSE
-				}
-				|------------------------------------------------------------------------------------------------------------
-				
-			} else {
-				|--- BEGIN - LOOT AND HANDLE CURSOR ITEM
-				/message \ay-- Grabbing corpse item (\am${LootSlot}\ax) of (\am${LootTotal}\ax).				
-				/nomodkey /shift /itemnotify Loot${LootSlot} leftmouseup
-				/delay 5 ${Cursor.ID}
-				/if (${Window[QuantityWnd].Open}) /notify QuantityWnd QTYW_Accept_Button leftmouseup
-				/delay 5
-	
-				|----------------------------------------------------------------------------------------------
-				/varset CursorItemValueInPlat ${Math.Calc[${FindItem[=${Cursor.Name}].Value}/1000]}
-				|----------------------------------------------------------------------------------------------
-				
-				|/echo (${Cursor.Name}) -- CursorItemValueInPlat=(${CursorItemValueInPlat}) | {MinItemValue})=${MinItemValue})
-				
-				|--------------------------------------------------------
-				|---- ALL VALUABLE STACKABLE LOOT THAT DROPS IN THIS ZONE
-				|--------------------------------------------------------	
-				/if (${Cursor.ID}) {
-					|--- DIAMOND COIN LOOT
-					/if (${Cursor.Name.Equal[Diamond Coin]}) {
-						/message \at+\ax \agKeeping a\ax \ay(\atDiamond Coin\ay) \ag worth \ay(\at${CursorItemValueInPlat}\ay)\ag platinum ... WOOT!\ax
-						/autoinventory 
-						/delay 5 !${Cursor.ID}
-					|--- LOOT ARRAY LOOTING
-					} else {
-						|------------------------------------------
-						/for LootArraySub 1 to ${RV_LootArray.Size}
-							/if (${Cursor.Name.Equal[${RV_LootArray[${LootArraySub}]}]}) {
-								/message \at+\ax \agKeeping a\ax \ay(\at${Cursor.Name}\ay)\ag, it is in our zone loot array!\ax						
-								/autoinventory 
-								/delay 5 !${Cursor.ID}
-							}							
-						/next LootArraySub
-						|------------------------------------------					
-					}
-				}
-				|--------------------------------------------------------
-	
-				|--------------------------------------------------------
-				|---- DESTROY ANYTHING REMAINING
-				|--------------------------------------------------------
-				/if (${Cursor.ID}) {
-					/message \ar-\ax \arDestroying a\ax \ay(\at${Cursor.Name}\ay)\ay.
-					/destroy
+			|----------------------------------------------------------------------------------------------
+			/varset CursorItemValueInPlat ${Math.Calc[${FindItem[=${Cursor.Name}].Value}/1000]}
+			|----------------------------------------------------------------------------------------------
+			
+			|/echo (${Cursor.Name}) -- CursorItemValueInPlat=(${CursorItemValueInPlat}) | {MinItemValue})=${MinItemValue})
+
+			|--------------------------------------------------------
+			|---- LOOT ARRAY ITEMS AND DIAMOND COIN
+			|--------------------------------------------------------			
+			/if (${Cursor.ID}) {
+				|--- DIAMOND COIN LOOT
+				/if (${Cursor.Name.Equal[Diamond Coin]}) {
+					/message \at+\ax \agKeeping a\ax \ay(\atDiamond Coin\ay) \ag worth \ay(\at${CursorItemValueInPlat}\ay)\ag platinum ... WOOT!\ax
+					/autoinventory 
 					/delay 5 !${Cursor.ID}
+				|--- LOOT ARRAY LOOTING
+				} else {
+					|------------------------------------------
+					/for LootArraySub 1 to ${RV_LootArray.Size}
+						/if (${Cursor.Name.Equal[${RV_LootArray[${LootArraySub}]}]}) {
+							/message \at+\ax \agKeeping a\ax \ay(\at${Cursor.Name}\ay)\ag, it is in our zone loot array!\ax						
+							/autoinventory 
+							/delay 5 !${Cursor.ID}
+						}							
+					/next LootArraySub
+					|------------------------------------------					
 				}
-				|--------------------------------------------------------			
-			|--- END - LOOT AND HANDLE CURSOR ITEM
 			}
 			|--------------------------------------------------------
-		/doevents
-		|--------------------------------------------
-		/if (${Me.XTarget} || ${Bool[${Spawn[npc radius 50].Aggressive}]}) /call DoClearTargets
-		|--------------------------------------------
-		/next LootSlot
-		|---------------------------------------
-    }
-    |--------------------------------------
+			|---- LOOT ARRAY ITEMS AND DIAMOND COIN
+			|--------------------------------------------------------
+	
+			|--------------------------------------------------------
+			|---- DESTROY ANYTHING REMAINING
+			|--------------------------------------------------------
+			/if (${Cursor.ID}) {
+				/message \ar-\ax \arDestroying a\ax \ay(\at${Cursor.Name}\ay)\ay.
+				/destroy
+				/delay 5 !${Cursor.ID}
+			}
+			|--------------------------------------------------------
+			|---- DESTROY ANYTHING REMAINING
+			|--------------------------------------------------------
 
-    /notify LootWnd DoneButton leftmouseup
+			|--------------------------------------------------------
+			|--- END - LOOT AND HANDLE CURSOR ITEM
+			|--------------------------------------------------------
+			:ByPassNextSlot
+			/doevents
+			|--------------------------------------------
+			/if (${Me.XTarget} || ${Bool[${Spawn[npc radius 50].Aggressive}]}) /call DoClearTargets
+			|--------------------------------------------
+		/next LootSlot
+		|---------------------------------------  FOR1
+    }
+    |-------------------------------------- CORPSE1
+    
+	|--------------------------------------
+	| CLOSE LOOT WINDOW
+	|--------------------------------------
+	/notify LootWnd DoneButton leftmouseup
     /delay 1s !${Window[LootWnd].Open}
+	|--------------------------------------	
+	
+	|--------------------------------------------------------
+	|---- HANDLE NODROP GANKS THAT WERE FLAGGED
+	|--------------------------------------------------------			
+	/if (${DoGroupGankNoDrop} && ${HaveNodropToLoot}) {
+		/call GroupGankNoDrop ${NoDropMobID} ${NoDropItemNum} ${Me.CleanName}
+	}
+	|--------------------------------------------------------	
+	
     |--------------------------------------------
     /if (${Me.XTarget} || ${Bool[${Spawn[npc radius 50].Aggressive}]}) /call DoClearTargets
     |--------------------------------------------
     /doevents
-  |-----------------------------------------------------------------
-  |-- After corpse has been checked, do GroupGankNoDrop if required.
-  |-----------------------------------------------------------------
-  /if (${DoGroupGankNoDrop}) /call GroupGankNoDrop ${NoDropMobID} "${NoDropMobItem}"
   |-----------------------------------------------------------------
   
   |-------------------------------------------------------------------------------------
@@ -2425,90 +2440,154 @@ Sub Zoning
 | --------------------------------------------------------------------------------------------
 | SUB: GroupGankNoDrop
 | --------------------------------------------------------------------------------------------
-  Sub GroupGankNoDrop(int GankMob_ID, string GankMob_Item)
+  Sub GroupGankNoDrop(int GankMob_ID, int GankMob_Item, string SenderName)
   /if (${Debugging}) /echo Sub GroupGankNoDrop Entry
-   
-	|/echo GankMob_ID=(${GankMob_ID}) | GankMob_Item=(${GankMob_Item})
-  
-	/declare NextGankLoot_Member int local 0
   
 	|------------------------------------------------------------------------------------------------------------
 	|- READ:  LastGankLoot_Member from ini file.
 	|------------------------------------------------------------------------------------------------------------
 	/varset LastGankLoot_Member ${Ini[${IniFileName},Zone,LastGankLoot_Member]}
-	|/echo LastGankLoot_Member=(${LastGankLoot_Member})
-
+	|------------------------------------------------------------------------------------------------------------
+	
+	/declare	NextGankLoot_Member 	int 	local 	0
+	/declare 	LootSlot_ND    			int 	local	0
+    /declare 	LootTotal_ND   			int 	local	0
+	/declare 	RealGroupMembers		int		local	0
+	/declare 	LastRealGroupMember		int		local	0
+	
+	/message ==================================================================
+	/message \ao-\ax \ayLooting FLAGGED NODROP ITEMS.
+	/message GankMob_ID=(${GankMob_ID}) | GankMob_Item=(${GankMob_Item}) | SenderName=(${SenderName})
+	/message ==================================================================
+	
+	|------------------------------------------------------------------------------------------------------------
 	/if (${LastGankLoot_Member}==0) {
 		|------------------------------------------------------------------------------------------------------------
 		|-- DO MY LOOT PASS SHIT HERE	
 		|------------------------------------------------------------------------------------------------------------			
+		/message \at+\ax \agNext person set to collect a\ax \ay(\at${GankMob_Item}\ay)\ag is \ay(\at${Group.Member[${LastGankLoot_Member}].CleanName}\ay)\ax.
 		/message \at+\ax \agI am set to collect a\ax \ay(\at${GankMob_Item}\ay)\ag.
 		
-		/hidecorpse none
-		/delay 1s
+		/hidecorpse looted		
 		/target ID ${GankMob_ID}
-		/delay 2s ${Target.ID}
+		/delay 5 ${Target.ID}
 		/face nolook
-		/delay 5
-		/moveto id ${Target.ID} mdist 10
-		/delay 5
+		/moveto id ${GankMob_ID}} mdist 10
 		/fastdrop on
-		/delay 5
 		/lootn never
-		/delay 5
-		/multi ; /timed 5 /loot ; /timed 5 /lootall
-		/delay 5s
+		/loot
+		/delay 10
+		
+		|-------------------------------------- CORPSE2
+		/if (${Corpse.Items}) {
+			/varset LootTotal_ND ${Corpse.Items}
+			|---------------------------------------  FOR2
+			/for LootSlot_ND 1 to ${LootTotal_ND}					
+				|--------------------------------------------------------
+				|--- BEGIN - LOOT AND HANDLE CURSOR ITEM
+				|--------------------------------------------------------									
+				/if (${Select[${Corpse.Item[${LootSlot_ND}].Name},${NoDropGankItems}]}) {
+					|------------------------------------------------------------------------------------------------------------
+					|- READ:  LastGankLoot_Member from ini file, Determine if we GANK
+					|------------------------------------------------------------------------------------------------------------								
+					/message \ay-- Grabbing corpse item (\am${LootSlot_ND}\ax) of (\am${LootTotal_ND}\ax).				
+					/message \ay-- Grabbing corpse item (\am${Corpse.Item[${LootSlot_ND}].Name}\ar)\ay.
+					/nomodkey /shift /itemnotify Loot${LootSlot_ND} leftmouseup
+					/delay 5 ${Cursor.ID}
+					/if (${Window[QuantityWnd].Open}) /notify QuantityWnd QTYW_Accept_Button leftmouseup
+					/delay 5
+					|---------------------
+					/if (${Cursor.ID}) {
+						/message \at+\ax \agKeeping a (\am${Cursor.Name}\ar)\ag.\ax
+						/autoinventory 
+						/delay 5 !${Cursor.ID}
+					}					
+					|---------------------
+				}						
+				|--------------------------------------------------------
+				|--- END - LOOT AND HANDLE CURSOR ITEM
+				|--------------------------------------------------------
+				/doevents
+				|--------------------------------------------
+				/if (${Me.XTarget} || ${Bool[${Spawn[npc radius 50].Aggressive}]}) /call DoClearTargets
+				|--------------------------------------------
+			/next LootSlot_ND
+			|---------------------------------------  FOR2
+		}
+		|-------------------------------------- CORPSE2
+		
+		|--------------------------------------
+		| CLOSE LOOT WINDOW
+		|--------------------------------------
+		/notify LootWnd DoneButton leftmouseup
+		/delay 1s !${Window[LootWnd].Open}
+		|--------------------------------------	
+	
 		|------------------------------------------------------------------------------------------------------------
 		|-- DO MY LOOT PASS SHIT HERE	
 		|------------------------------------------------------------------------------------------------------------			
-	} else {
-		/message \at+\ax \agNext person set to collect a\ax \ay(\at${GankMob_Item}\ay)\ag is \ay(\at${Group.Member[${LastGankLoot_Member}].CleanName}\ay)\ax.
+	} else /if ((${Group.Members}>0) && ${LastGankLoot_Member}>0) {
 		|------------------------------------------------------------------------------------------------------------
 		|-- DO OTHER MEMBER LOOT PASS SHIT HERE	
 		|------------------------------------------------------------------------------------------------------------
+		/message \at+\ax \agNext person set to collect a\ax \ay(\at${GankMob_Item}\ay)\ag is \ay(\at${Group.Member[${LastGankLoot_Member}].CleanName}\ay)\ax.
 		/message \agTelling \ay(\at${Group.Member[${LastGankLoot_Member}].CleanName}\ay)\ag to loot \ay(\at${GankMob_Item}\ay)\ag off of \ay(\atMOBID:${GankMob_ID}\ay)\ag.
-	
-		/squelch /e3bct ${Group.Member[${LastGankLoot_Member}].CleanName} /multi ; /afollow off ; /nav stop ; /stand
-		/delay 1s
-		/squelch /e3bct ${Group.Member[${LastGankLoot_Member}].CleanName} /target ID ${GankMob_ID}
-		/delay 2s
-		/squelch /e3bct ${Group.Member[${LastGankLoot_Member}].CleanName} /face nolook
-		/delay 5
-		/squelch /e3bct ${Group.Member[${LastGankLoot_Member}].CleanName} /moveto id ${Target.ID} mdist 10
-		/delay 3s
-		/squelch /e3bct ${Group.Member[${LastGankLoot_Member}].CleanName} /fastdrop on
-		/delay 5
-		/squelch /e3bct ${Group.Member[${LastGankLoot_Member}].CleanName} /lootn never
-		/delay 5
-		/squelch /e3bct ${Group.Member[${LastGankLoot_Member}].CleanName} /multi ; /timed 5 /loot ; /timed 5 /lootall
-		/delay 5s
-		/squelch /e3bct ${Group.Member[${LastGankLoot_Member}].CleanName} /afollow spawn ${Me.ID}
-		/delay 5		
+		|------------------------------------------------------------------------------------------------------------
+		
+		|------------------------------------------------------------------------------
+		/if (!${Defined[OtherToonStatus]}) /declare OtherToonStatus string outer "idle"
+		/varset OtherToonStatus running
+		/e3bct ${Group.Member[${LastGankLoot_Member}].CleanName} /mac LootNoDropItem ${GankMob_ID} ${GankMob_Item} ${Me.CleanName}
+
+		/message ==================================================================
+		/message Waiting for the other toon to finish their macro...
+		
+		 :NoDropLootWaitLoop
+		/delay 5 (${OtherToonStatus.Equal[finished]})
+		/if (${OtherToonStatus.Equal[running]}) /goto :NoDropLootWaitLoop
+		
+		/varset OtherToonStatus idle
+		/message \ay The other toon has finished! Resuming primary macro.	
+		/message ==================================================================
 		|------------------------------------------------------------------------------------------------------------
 		|-- DO OTHER MEMBER LOOT PASS SHIT HERE	
 		|------------------------------------------------------------------------------------------------------------		
 	}
-	
+	|------------------------------------------------------------------------------------------------------------
+
+	|------------------------------------------------------------------------------------------------------------
+	| SET COUNTERS AND LOG
+	|------------------------------------------------------------------------------------------------------------
+	/varcalc LastRealGroupMember (${LastGankLoot_Member})+1
+	/varcalc RealGroupMembers (${Group.Members})+1
+		
 	|-----------------------------------------------------------------------------------------------------------------------
 	| -- GET NEXT LastGankLoot_Member 
 	|-----------------------------------------------------------------------------------------------------------------------
-	/if (${LastGankLoot_Member}<5) {
-		/varcalc NextGankLoot_Member (${LastGankLoot_Member})+1
-	} else {
+	/if ((${LastGankLoot_Member}>=0) && (${LastRealGroupMember}<${RealGroupMembers}) && ${HaveNodropToLoot}) {
+		/varcalc NextGankLoot_Member ${LastGankLoot_Member}+1
+		/message \ay-- The next group member up to loot NoDrop item is (${Group.Member[${LastGankLoot_Member}].CleanName}).					
+	} else /if ((${LastGankLoot_Member}>=0) && (${LastRealGroupMember}==${RealGroupMembers}) && ${HaveNodropToLoot}) {
 		/varset NextGankLoot_Member 999
+		/varset DoGroupGankNoDrop FALSE
+		/message ==================================================================
+		/message \ay-- All group members have looted their NoDrop item.
+		/message ==================================================================
 	}
 	|-----------------------------------------------------------------------------------------------------------------------
 	| -- Write NEXT LastGankLoot_Member to the ini file, no need to VARSET it since it needs to be read from file each time.
-	|-----------------------------------------------------------------------------------------------------------------------
-	/call IniChange "Zone" "LastGankLoot_Member" ${NextGankLoot_Member}
+	|-----------------------------------------------------------------------------------------------------------------------	
+	/call IniChange "Zone" "LastGankLoot_Member" "${NextGankLoot_Member}"
 	/delay 20
-	|------------------------------------------------------------------------------------------------------------
-	|- SET DoGroupGankNoDrop to FALSE
-	|------------------------------------------------------------------------------------------------------------
-	/varset DoGroupGankNoDrop FALSE
-	|------------------------------------------------------------------------------------------------------------
-	
+	|-------------------------------
+	|- SET HaveNodropToLoot to FALSE
+	|-------------------------------
+	/varset HaveNodropToLoot FALSE
+	|-------------------------------	
+	|-----------------------------------------------------------------------------------------------------------------------
+
   /if (${Debugging}) /echo Sub GroupGankNoDrop Exit
+  
   /return
 | --------------------------------------------------------------------------------------------
 
@@ -3283,17 +3362,18 @@ Sub CheckThings
 			|------------------------------------------------
 			/if (${DoGroupGankNoDrop}) {
 				|--------------------------
-				/if (${Group.Members}>0) {
-					/message \ay    [\aoWE ARE HUNTING FOR\ay] \awNo Drop List\ao: \am[\at${NoDropGankItems}\am]\aw.\ax					
-					/message \ay    Next person to loot a NODROP match is: \am[\at${Group.Member[${LastGankLoot_Member}].CleanName}\am]\ay.\ax			
-					/message \ag    We will also loot from the Zone-Wide LootList Array.
-				} else {
-					/message \ar    --- We are set to loot nodrop but NOT in a GROUP !!!!!
-					/message \ar    --- DISABLING NODROP LOOTING.
-					/varset DoGroupGankNoDrop FALSE
-				}				
+				/varset LastGankLoot_Member ${Ini[${IniFileName},Zone,LastGankLoot_Member]}
+				/message \ay    [\aoWE ARE HUNTING FOR\ay] \awNo Drop List\ao: \am[\at${NoDropGankItems}\am]\aw.\ax
 				|--------------------------
-			} 
+				/if (${Group.Members}==0) {
+					/message \ay    Next person to loot a NODROP match is: \am[\at${Me.CleanName}\am]\ay.\ax			
+				} else {
+					/message \ay    Next person to loot a NODROP match is: \am[\at${Group.Member[${LastGankLoot_Member}].CleanName}\am]\ay.\ax			
+				}
+				|--------------------------
+				/message \ag    We will also loot from the Zone-Wide LootList Array.
+				|--------------------------
+			}
 			|------------------------------------------------
 			|--------------------------------------------------
 			/if (${Lua.Script[turbo].Status.Equal[Running]}) {

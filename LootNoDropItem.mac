@@ -1,0 +1,168 @@
+| ==========================================================
+| LootItem.mac
+| Usage: /mac lootitem <corpse_id> <item_number>
+|   corpse_id   = the spawn ID of the corpse to loot from
+|   item_number = the Item ID to loot from the corpse
+|
+| Lists every item on the corpse (item number, name, and item ID),
+| then attempts to loot the item whose ItemID matches item_number.
+| ==========================================================
+
+#turbo 15
+
+Sub Main(int CorpseID, int ItemNumber)
+
+	/declare LootSlot         int    outer 0
+	/declare i                int    outer 0
+	/declare MaxWait          int    outer 0
+	/declare LootRange        float  outer 10
+	/declare FoundName        string outer ""
+	/declare ItemName         string outer ""
+	/declare ItemID           int    outer 0
+
+	/if (${Defined[ItemNumber]} == FALSE || ${Defined[CorpseID]} == FALSE) {
+		/echo \arUsage: /mac lootitem <corpse_id> <item_number>
+		/return
+	}
+
+	/if (${ItemNumber} <= 0 || ${CorpseID} <= 0) {
+		/echo \arInvalid item_number or corpse_id passed to macro.
+		/return
+	}
+
+	/echo \ayLootItem: Targeting corpse ID ${CorpseID}...
+
+	| --- Step 1: Target the corpse by ID ---
+	/target id ${CorpseID}
+	/delay 10 ${Target.ID}==${CorpseID}
+
+	/if (${Target.ID} != ${CorpseID}) {
+		/echo \arCould not target corpse with ID ${CorpseID}. It may be out of range or already gone.
+		/return
+	}
+
+	/if (${Target.Type.NotEqual["Corpse"]}) {
+		/echo \arTarget ID ${CorpseID} is not a corpse (Type=${Target.Type}). Aborting.
+		/return
+	}
+
+	| --- Step 2: Move to the corpse if not already in loot range ---
+	/if (${Target.Distance} > ${LootRange}) {
+		/echo \ayMoving to corpse (distance ${Target.Distance})...
+		/nav id ${CorpseID} log=off
+		/delay 5s ${Navigation.Active}==FALSE
+
+		/varset MaxWait 0
+		/while (${Target.Distance} > ${LootRange} && ${MaxWait} < 200) {
+			/delay 2
+			/varcalc MaxWait ${MaxWait} + 1
+		}
+
+		/if (${Target.Distance} > ${LootRange}) {
+			/echo \arFailed to get within loot range of corpse ${CorpseID}.
+			/return
+		}
+	}
+
+	/face fast
+
+	| --- Ensure we are fully stopped before looting ---
+	/if (${Me.Speed} > 0) {
+		/echo \ayWaiting to stop moving...
+		/varset MaxWait 0
+		/while (${Me.Speed} > 0 && ${MaxWait} < 100) {
+			/delay 2
+			/varcalc MaxWait ${MaxWait} + 1
+		}
+	}
+
+	| --- Final check: corpse must be within loot range and we must be stationary ---
+	/if (${Target.Distance} > ${LootRange}) {
+		/echo \arCorpse ${CorpseID} is ${Target.Distance} away, outside the ${LootRange} pace loot range. Aborting.
+		/return
+	}
+
+	/if (${Me.Speed} > 0) {
+		/echo \arStill moving, cannot safely loot corpse ${CorpseID}. Aborting.
+		/return
+	}
+
+	| --- Step 3: Open the loot window ---
+	/echo \ayLooting corpse ${CorpseID}...
+	/loot
+	/delay 5s ${Window[LootWnd].Open}==TRUE
+
+	/if (!${Window[LootWnd].Open}) {
+		/echo \arLoot window did not open. Corpse may be empty or already looted.
+		/return
+	}
+
+	| --- Step 4: List every item on the corpse by name and item number ---
+	/varset LootSlot 0
+	/varset i 1
+
+	/if (${Corpse.Items} == 0) {
+		/echo \ayCorpse ${CorpseID} has no items.
+	} else {
+		/while (${i} <= ${Corpse.Items}) {
+			/varset ItemName ${Corpse.Item[${i}].Name}
+			/varset ItemID ${Corpse.Item[${i}].ID}
+			/echo \agItemNumber: ${i}  Name: ${ItemName}  ItemID: ${ItemID}
+
+			/if (${ItemID} == ${ItemNumber}) {
+				/varset LootSlot ${i}
+				/varset FoundName ${ItemName}
+			}
+
+			/varcalc i ${i} + 1
+		}
+	}
+
+	/if (${LootSlot} == 0) {
+		/echo \arItem ID ${ItemNumber} not found on corpse ${CorpseID}.
+		/notify LootWnd LW_DoneButton leftmouseup
+		/return
+	}
+
+	/echo \agFound item ID ${ItemNumber} (${FoundName}) in loot slot ${LootSlot}
+	/echo \ayIssuing: /itemnotify loot${LootSlot} leftmouseup
+
+	/itemnotify loot${LootSlot} leftmouseup
+	/delay 10
+
+	/echo \ayAfter click - ConfirmationDialogBox open: ${Window[ConfirmationDialogBox].Open}  Cursor.ID: ${Cursor.ID}
+
+	| --- Handle the "This item is NO DROP" confirmation popup, if it appears ---
+	/if (${Window[ConfirmationDialogBox].Open}) {
+		/echo \ayNoDrop confirmation detected, confirming...
+		/notify ConfirmationDialogBox Yes_Button leftmouseup
+		/delay 10
+		/echo \ayAfter confirm - ConfirmationDialogBox open: ${Window[ConfirmationDialogBox].Open}  Cursor.ID: ${Cursor.ID}
+	}
+
+	/delay 3s ${Cursor.ID}
+
+	/echo \ayFinal check - Cursor.ID: ${Cursor.ID}  Cursor.Name: ${Cursor.Name}  FreeInventory: ${Me.FreeInventory}
+
+	/if (${Cursor.ID}) {
+		/autoinventory
+		/delay 10 !${Cursor.ID}
+		/echo \agLooted: ${FoundName}
+	} else {
+		/delay 15 ${FindItem[=${FoundName}].ID}
+		/if (${FindItem[=${FoundName}].ID}) {
+			/echo \agLooted: ${FoundName} (went directly to inventory, no cursor step)
+		} else {
+			/echo \arFailed to loot item ${FoundName} (slot ${LootSlot}). No item on cursor and none found in inventory.
+		}
+	}
+
+	| --- Close loot window ---
+	/delay 5
+	/if (${Window[LootWnd].Open}) {
+		/notify LootWnd LW_DoneButton leftmouseup
+	}
+
+	/echo \ayLootItem macro complete.
+
+/return
