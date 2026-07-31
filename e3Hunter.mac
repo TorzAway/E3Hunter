@@ -1,8 +1,8 @@
 |****************************************************************************************************************
 e3Hunter.mac - by Kroaking
-Last Updated: July 29th, 2026 - 09:52:00 AM
+Last Updated: July 31st, 2026 - 04:46:00 PM
 
-v1.5.0
+v1.5.1
 
 ****************************************************************************************************************|
 /squelch /log on
@@ -1127,8 +1127,7 @@ Sub DoSinglePull_Name(string Enemy)
 	|------------------------------------------------
 	|--- Remove any comma from the zone longname ----
 	|------------------------------------------------
-	/message ==================================================================
-	
+
 	|------------------------------------------------------------
 	|Mob Array Information.
 	|------------------------------------------------------------
@@ -1170,20 +1169,20 @@ Sub DoSinglePull_Name(string Enemy)
 		/if (${RV_HasTarget}) {
 			
 			|-----
-			|-- SinglePull_Loc set in the GetTarget Sub.
+			|-- RV_MyTargetID set in the GetTarget Sub.
+			|-- NOTE: Was "/call NavToLoc2 ${SinglePull_Loc}", which navved to a
+			|-- one-time SNAPSHOT of the mob's Y/X/Z taken back in GetTarget. If the
+			|-- mob wandered before we arrived, we'd walk to empty air. NavToMobID
+			|-- instead navs by the mob's spawn ID, so the nav engine keeps re-pathing
+			|-- to wherever the mob currently is until we're actually on top of it.
 			|-----
-			/call NavToLoc2 ${SinglePull_Loc}
+			/call NavToMobID ${RV_MyTargetID}
 			/delay 5
 			/while (${Navigation.Active}) {
 				/call SetLoc
 				/call CheckStuck
 				/delay 5
 			}			
-			|-----
-			| NOTE: Removed redundant second "/nav loc ${SinglePull_Loc}" re-pull here.
-			| NavToLoc2 already closes distance to within 20 units before returning,
-			| so re-issuing a full nav command to the same point just re-paid the
-			| nav engine spin-up + travel cost for that last stretch a second time.
 		}
 		|----------------------------------------------
 	}
@@ -1266,6 +1265,23 @@ Sub DoSinglePull_Name(string Enemy)
       }
       /varset BadMeTarget 0
       /varset BadPCTarget 0
+
+      |------------------------------
+      |-- Already under attack? Stop hunting for the next mob on the
+      |-- HUNT LIST and deal with the attacker first.
+      |-- Previously, CheckAggro (above/below) would only set a target
+      |-- if we had none, and the very next line unconditionally
+      |-- re-targeted via the named hunt-list search anyway - so a mob
+      |-- that wasn't on that list (i.e. "below the threshold" we're
+      |-- hunting for) got silently dropped even while it was hitting us.
+      |------------------------------
+      /if (${Me.XTarget} || ${Bool[${Spawn[npc radius 35].Aggressive}]}) {
+        /message \ar+\ax Got aggro while searching for a hunt-list mob - engaging the attacker first.
+        /call DoClearTargets
+        /call ResetSub
+        /goto :Acquire
+      }
+      |------------------------------
 
     |/echo Mob array size = ${RV_MobArray.Size}
     |/echo RV_TargetSub = ${RV_TargetSub}
@@ -1946,19 +1962,23 @@ Sub NavToLoc2(int Y,int X,int Z)
 				/popcustom 13 5 ---> GOT AGGRO ON ROUTE <---
 				/if (${Navigation.Active}) /nav stop
 				/if (${Debugging}) /echo CALL DoSinglePull NavToLoc	
-				/target id ${NearestSpawn[npc radius 35 targetable].ID}
-				/if (${Spawn[id ${Target.ID}].Distance} > 30) /squelch /nav id ${Target.ID}
-				/if (${Spawn[id ${Target.ID}].Distance} < 30) {
-					|------  CALL GROUP TO ME To FIGHT
-					/call Group2Me
-					|------  CALL GROUP TO ME To FIGHT									
-					/if (${Target.ID}) /face
-					/squelch /attack on
-					/call DoClearTargets
-					/if (${LootCorpse} && !${Me.XTarget} && !${Bool[${Spawn[npc radius 35].Aggressive}]}) /call CheckForCorpses
-					/doevents
-					/if (${UseClickDamage}) /call Clickies_Damage
-				}
+				|-----
+				| NOTE: Was manually /target'ing "NearestSpawn npc radius 35
+				| targetable" here and only fighting if it happened to be within
+				| 30 - that's just the closest targetable NPC, not necessarily
+				| what's actually attacking us, and mobs further than 30 got
+				| walked toward but never actually engaged. DoClearTargets already
+				| correctly identifies the real aggressor (via Me.XTarget /
+				| Target.Aggressive) at any distance and fights it to completion,
+				| so hand off to it directly instead.
+				|-----
+				|------  CALL GROUP TO ME To FIGHT
+				/call Group2Me
+				|------  CALL GROUP TO ME To FIGHT
+				/call DoClearTargets
+				/if (${LootCorpse} && !${Me.XTarget} && !${Bool[${Spawn[npc radius 35].Aggressive}]}) /call CheckForCorpses
+				/doevents
+				/if (${UseClickDamage}) /call Clickies_Damage
 			} else {
 				/if (${Debugging}) /echo WaitNav Moving ELSE
 				/if (${CheckBots}) /call GroupDeathChk
@@ -1973,19 +1993,18 @@ Sub NavToLoc2(int Y,int X,int Z)
 				/popcustom 13 5 ---> GOT AGGRO ON ROUTE <---
 				/if (${Navigation.Active}) /nav stop
 				/if (${Debugging}) /echo CALL FARM STUFF NavToLoc II
-				/target id ${NearestSpawn[npc radius 35 targetable].ID}
-				/if (${Spawn[id ${Target.ID}].Distance} > 30) /squelch /nav id ${Target.ID}
-				/if (${Spawn[id ${Target.ID}].Distance} < 30) {
-					|------  CALL GROUP TO ME To FIGHT
-					/call Group2Me
-					|------  CALL GROUP TO ME To FIGHT				
-					/if (${Target.ID}) /face
-					/squelch /attack on
-					/call DoClearTargets
-					/if (${LootCorpse} && !${Me.XTarget} && !${Bool[${Spawn[npc radius 35].Aggressive}]}) /call CheckForCorpses
-					/doevents
-					/if (${UseClickDamage}) /call Clickies_Damage
-				}
+				|-----
+				| NOTE: See matching note above - hand off straight to
+				| DoClearTargets instead of only engaging the "nearest
+				| targetable" NPC when it happened to be within 30.
+				|-----
+				|------  CALL GROUP TO ME To FIGHT
+				/call Group2Me
+				|------  CALL GROUP TO ME To FIGHT
+				/call DoClearTargets
+				/if (${LootCorpse} && !${Me.XTarget} && !${Bool[${Spawn[npc radius 35].Aggressive}]}) /call CheckForCorpses
+				/doevents
+				/if (${UseClickDamage}) /call Clickies_Damage
 			} else {
 				/if (${CheckBots}) /call GroupDeathChk
 			}
@@ -2007,6 +2026,106 @@ Sub NavToLoc2(int Y,int X,int Z)
 	/delay 5 !${Navigation.Active}
 	/if (${Navigation.Active}) /nav stop
 	/if (${Debugging}) /echo Sub NavToLoc2 Exit
+/return
+| --------------------------------------------------------------------------------------------
+
+| --------------------------------------------------------------------------------------------
+| SUB: NavToMobID
+| --------------------------------------------------------------------------------------------
+| Same combat/aggro-aware travel loop as NavToLoc2, but tracks a MOB by spawn ID
+| instead of a fixed Y/X/Z. "/nav id <id>" re-paths to wherever that spawn CURRENTLY
+| is each time it's issued, so re-issuing it on every pass (below) keeps closing on
+| a mob that is walking/wandering, instead of walking to where it used to be.
+| --------------------------------------------------------------------------------------------
+Sub NavToMobID(int MobID)
+
+	/if (${Debugging}) /echo Entering Sub NavToMobID for MobID: ${MobID} at Line: ${Macro.CurLine}
+	/varset GroupWaitTimer 0
+	/message \at-- NavToMobID \ay[\amCombat & Agro aware movement\ay] \atto mob id:\ay[\am${MobID}\ay]\at.
+
+	/if (!${Spawn[id ${MobID}].ID}) {
+		/message \ar-- NavToMobID: mob id \ay[\am${MobID}\ay]\ar is not a valid spawn, nothing to nav to.\ax
+		/return
+	}
+
+	/while (${Spawn[id ${MobID}].ID} && ${Spawn[id ${MobID}].Distance} > 20) {
+		/if (${Navigation.Active}) {
+			/if (${Debugging}) /echo WaitNav Moving ELSE
+			/if (${CheckBots}) /call GroupDeathChk
+			/if (${CheckBots}) /call GroupManaChk
+			/if (${CheckBots}) /call GroupEndChk
+			/call PCnGMCheck
+			/if (${Me.XTarget} || ${Bool[${Spawn[npc radius 35].Aggressive}]}) {
+				/popcustom 13 5 ---> GOT AGGRO ON ROUTE <---
+				/if (${Navigation.Active}) /nav stop
+				/if (${Debugging}) /echo CALL DoSinglePull NavToMobID
+				|-----
+				| NOTE: Was manually /target'ing "NearestSpawn npc radius 35
+				| targetable" and only fighting if it was within 30 - that's just
+				| the closest targetable NPC, not necessarily the actual
+				| aggressor, and a real attacker further than 30 got walked
+				| toward but never engaged. DoClearTargets already correctly
+				| identifies the real aggressor (via Me.XTarget / Target.Aggressive)
+				| at any distance and fights it to completion, so hand off to it.
+				|-----
+				|------  CALL GROUP TO ME To FIGHT
+				/call Group2Me
+				|------  CALL GROUP TO ME To FIGHT
+				/call DoClearTargets
+				/if (${LootCorpse} && !${Me.XTarget} && !${Bool[${Spawn[npc radius 35].Aggressive}]}) /call CheckForCorpses
+				/doevents
+				/if (${UseClickDamage}) /call Clickies_Damage
+			} else {
+				/if (${Debugging}) /echo WaitNav Moving ELSE
+				/if (${CheckBots}) /call GroupDeathChk
+				/if (${CheckBots}) /call GroupManaChk
+				/if (${CheckBots}) /call GroupEndChk
+				/call PCnGMCheck
+			}
+			/if (${Me.Combat} && !${Me.XTarget} && !${Bool[${Spawn[npc radius 35].Aggressive}]}) /squelch /target clear
+			/call SetLoc
+			/call CheckStuck
+			/delay 10
+		} else {
+			/if (${Me.XTarget} || ${Bool[${Spawn[npc radius 35].Aggressive}]}) {
+				/popcustom 13 5 ---> GOT AGGRO ON ROUTE <---
+				/if (${Navigation.Active}) /nav stop
+				/if (${Debugging}) /echo CALL FARM STUFF NavToMobID II
+				|-----
+				| NOTE: See matching note above - hand off straight to
+				| DoClearTargets instead of only engaging the "nearest
+				| targetable" NPC when it happened to be within 30.
+				|-----
+				|------  CALL GROUP TO ME To FIGHT
+				/call Group2Me
+				|------  CALL GROUP TO ME To FIGHT
+				/call DoClearTargets
+				/if (${LootCorpse} && !${Me.XTarget} && !${Bool[${Spawn[npc radius 35].Aggressive}]}) /call CheckForCorpses
+				/doevents
+				/if (${UseClickDamage}) /call Clickies_Damage
+			} else {
+				/if (${CheckBots}) /call GroupDeathChk
+			}
+			/if (${Me.Combat} && !${Me.XTarget} && !${Bool[${Spawn[npc radius 35].Aggressive}]}) /squelch /target clear
+			|--------------------
+			|-- Re-issue nav to the mob's ID (not a cached loc) every pass, so a
+			|-- moving/wandering mob gets re-pathed-to instead of walked-past.
+			/if (${Spawn[id ${MobID}].ID}) {
+				/if (${Group.Members}>0) {
+					/if (!${Me.Moving} && !${Me.Combat} && !${Me.XTarget} && !${Bool[${Spawn[npc radius 35].Aggressive}]}) /squelch /e3bcgza /nav id ${MobID}
+				} else {
+					/if (!${Me.Moving} && !${Me.Combat} && !${Me.XTarget} && !${Bool[${Spawn[npc radius 35].Aggressive}]}) /squelch /nav id ${MobID}
+				}
+			}
+			|--------------------
+			/delay 5 ${Me.Moving}
+			/delay 5 ${Navigation.Active}
+		}
+	}
+	/delay 5 !${Navigation.Active}
+	/if (${Navigation.Active}) /nav stop
+	/if (!${Spawn[id ${MobID}].ID}) /message \ar-- NavToMobID: mob id \ay[\am${MobID}\ay]\ar is no longer valid (dead/despawned/out of range) - stopping nav.\ax
+	/if (${Debugging}) /echo Sub NavToMobID Exit
 /return
 | --------------------------------------------------------------------------------------------
 
