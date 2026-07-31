@@ -1770,6 +1770,7 @@ Sub WaitForSpawns
 	/while (${WaitForSpawnsTimer} > 0 && !${Me.Combat} && !${Me.XTarget} && !${Bool[${Spawn[npc radius 35].Aggressive}]}) {
 		/delay 1s
 		/varcalc WaitForSpawnsTimer ${WaitForSpawnsTimer} - 1
+		/message \ay-- Time left waiting for spawns: \am(\ag${WaitForSpawnsTimer}\am)\ay second(s).\ax
 	}
 	/call DoClearTargets
 	|-----------------------------------------------
