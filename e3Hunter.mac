@@ -2,6 +2,13 @@
 e3Hunter.mac - by Kroaking
 Last Updated: July 31st, 2026 - 06:02:00 PM
 
+v1.5.2
+- Fixed: MOB hunt method could skip looting a corpse entirely and move on
+  to hunting the next mob whenever an aggressive-CON npc merely existed
+  nearby (even if it wasn't attacking). DoSinglePull_Name now resolves
+  that aggro via DoClearTargets first, then loots, instead of abandoning
+  the corpse.
+
 v1.5.1
 
 ****************************************************************************************************************|
@@ -43,7 +50,7 @@ Sub Main
 	/declare runcounter 		int 		outer	0
 	/declare notkillable		int 		outer	0
 	/declare Announce			bool		outer	FALSE
-	/declare version			string		outer	1.5.1
+	/declare version			string		outer	1.5.2
 	/declare LastUpdated		string		outer	"Last Updated: July 31st, 2026 - 06:02:00 PM"
 
 	/message ==================================================================
@@ -1203,8 +1210,19 @@ Sub DoSinglePull_Name(string Enemy)
 
 	|----------------------------------------------------------------
 	|-- Clear the camp location of any corpses before the next cycle.
+	|-- NOTE: Previously this was gated on "!XTarget && !Aggressive nearby",
+	|-- which SKIPPED looting entirely (and went straight to hunting the
+	|-- next mob) any time an aggressive-CON npc merely existed within 35
+	|-- units - even if it was never actually attacking us. In a dense MOB
+	|-- camp that's true almost every time right after a kill, so the
+	|-- corpse got abandoned. Now we resolve the aggro first (DoClearTargets
+	|-- loops internally until it's actually clear) and then always attempt
+	|-- the loot, instead of walking away from it.
 	|----------------------------------------------------------------
-	/if (${LootCorpse} && !${Me.XTarget} && !${Bool[${Spawn[npc radius 35].Aggressive}]}) /call CheckForCorpses
+	/if (${LootCorpse} && ${Bool[${Spawn[Corpse radius 100]}]}) {
+		/if (${Me.XTarget} || ${Bool[${Spawn[npc radius 35].Aggressive}]}) /call DoClearTargets
+		/call CheckForCorpses
+	}
 	|----------------------------------------------------------------	
 	
 	|------------------------------------------
