@@ -219,6 +219,7 @@ Sub Declares
 	/declare ValidZoneName 		string 	outer ${Zone.Name}
 	/declare courseCorrection 	timer 	outer 1s
 	/declare myTargetID 		int 	outer 0
+	/declare WaitForSpawnsTimer	int		outer 0
 	/declare reportTarget 		timer 	outer 5s
 	/declare startZone 			int 	outer ${Zone.ID}
 
