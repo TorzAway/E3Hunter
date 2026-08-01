@@ -2274,11 +2274,23 @@ Sub Zoning
   Sub CheckForCorpses
   /if (${Debugging}) /echo Sub CheckForCorpses Entry
 
-  /call PCnGMCheck
-  /message \ay- Checking for missed corpse(s).
-  /if (${Bool[${Spawn[Corpse radius 100]}]}) /message \at+++ \ayLooks like we have a corpse to loot.
   /if (${Target.ID} && (!${Me.XTarget} || !${Bool[${Spawn[npc radius 35].Aggressive}]})) /squelch /target clear
   
+  /call PCnGMCheck
+  /message \ay- Checking for missed corpse(s).
+  
+  /delay 1s ${Spawn[corpse radius 100].ID}
+	
+  |--------------------------------------	
+ /if (${Bool[${Spawn[Corpse radius 100].ID}]}) {
+	/message \at+++ \ayLooks like we have \am(\ag${SpawnCount[corpse radius 100]}\am)\ay corpse(s) to loot.\ax
+	/squelch /target ${Spawn[corpse radius 100]}
+  } else {
+	/message \ar--- \ayLooks like we have \arNO\ay corpse(s) to loot.
+	/return
+  }
+  |--------------------------------------	
+
 :CheckAgain
   |------------------
   /if (${MouseLock}) /mouseto ${MouseLocValX}, ${MouseLocValY}
