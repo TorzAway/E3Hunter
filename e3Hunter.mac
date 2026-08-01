@@ -1,6 +1,9 @@
 |****************************************************************************************************************
 e3Hunter.mac - by Kroaking
-Last Updated: July 31st, 2026 - 07:10:00 PM
+Last Updated: August 1st, 2026 - 06:00:00 AM
+
+v1.5.3
+- Fixed name name resolution error for zones with commas in them.
 
 v1.5.2
 - Fixed: MOB hunt method could skip looting a corpse entirely and move on
@@ -48,8 +51,8 @@ Sub Main
 	/declare runcounter 		int 		outer	0
 	/declare notkillable		int 		outer	0
 	/declare Announce			bool		outer	FALSE
-	/declare version			string		outer	1.5.2
-	/declare LastUpdated		string		outer	"Last Updated: July 31st, 2026 - 07:10:00 PM"
+	/declare version			string		outer	1.5.3
+	/declare LastUpdated		string		outer	"Last Updated: August 1st, 2026 - 06:00:00 AM"
 
 	/message ==================================================================
  	/call Declares
@@ -99,11 +102,16 @@ Sub Main
 	|---------------------------------------------------------------------------	
 	/message ==================================================================
 	/delay 3s
+
+	|----------------
+	/call ResolveZone
+	|----------------
+	/delay 2s
 	
 	|----------------
 	/call CheckThings
 	|----------------
-	
+
 	|--------------------------------------------
 	/if (${MouseLock}) {
 		/message \ag- MouseLock \ayis set to \am[\at${MouseLock}\am]\ax
@@ -711,6 +719,38 @@ Sub CheckPBAELogic
 | --------------------------------------------------------------------------------------------
 
 | --------------------------------------------------------------------------------------------
+| SUB: ResolveZone
+| --------------------------------------------------------------------------------------------
+Sub ResolveZone
+	/if (${Debugging}) /echo Sub ResolveZone Entry
+
+	/message \agSetting up zone association for \ay[\ar${HuntMethod}\ay] \aghunting. . . . .
+	|------------------------------------------------
+	|--- Remove any comma from the zone name ----
+	|------------------------------------------------
+	/message \ay - ORIGINAL ZONE NAME\ao=\am(\at${ValidZoneName}\am)\ax
+	/if (${ValidZoneName.Find[,]}) {
+		|/echo ${ValidZoneName} \arhas\ax a COMMA in it !
+		|/echo \arNeed to Modify Zone Name.\ax
+		|/echo CutPart 1=(${Zone.Name.Arg[1,,]})
+		|/echo CutPart 2=(${Zone.Name.Arg[2,,]})
+		/message \ao - MODIFIED ZONE NAME\ao=\am(\at${Zone.Name.Arg[1,,]}${Zone.Name.Arg[2,,]}\am)\ax
+		/varset ValidZoneName ${Zone.Name.Arg[1,,]}${Zone.Name.Arg[2,,]}
+	} else {
+		/message \at - \am(\at${ValidZoneName}\am)\ag does \arNOT\ag have a \atCOMMA\ag in it !\ax
+		/message \ag - No need to Modify Zone Name.\ax
+	}
+	/message \ar - Final ZONE NAME\ao=\am(\at${ValidZoneName}\am)\ax
+	|------------------------------------------------
+	|--- Remove any comma from the zone longname ----
+	|------------------------------------------------
+	/message ==================================================================	
+
+	/if (${Debugging}) /echo Sub ResolveZone Exit
+/return
+| --------------------------------------------------------------------------------------------
+
+| --------------------------------------------------------------------------------------------
 | SUB: DoSinglePull_Any
 | --------------------------------------------------------------------------------------------
 Sub DoSinglePull_Any(string Enemy)
@@ -1112,28 +1152,6 @@ Sub DoSinglePull_Name(string Enemy)
 
 	/if (${Debugging}) /echo DoSinglePull_Name Sub Entry
 	
-	|-----------------------------------------------
-	/message ==================================================================
-	|------------------------------------------------
-	|--- Remove any comma from the zone name ----
-	|------------------------------------------------
-	/message \ag - ORIGINAL ZONE NAME\ao=\am(\at${ValidZoneName}\am)\ax
-	/if (${ValidZoneName.Find[,]}) {
-		|/echo ${ValidZoneName} \arhas\ax a COMMA in it !
-		|/echo \arNeed to Modify Zone Name.\ax
-		|/echo CutPart 1=(${Zone.Name.Arg[1,,]})
-		|/echo CutPart 2=(${Zone.Name.Arg[2,,]})
-		/message  \ag - MODIFIED\ay=\am(\at${Zone.Name.Arg[1,,]} ${Zone.Name.Arg[2,,]}\am)\ax
-		/varset ValidZoneName ${Zone.Name.Arg[1,,]} ${Zone.Name.Arg[2,,]}
-	} else {
-		/message \at - ${ValidZoneName}\ax \agdoes NOT have\ax a COMMA in it !\ax
-		/message \at - No need to Modify Zone Name.\ax
-	}
-	/message \agFinal ZONE NAME\ao=\am(\at${ValidZoneName}\am)\ax
-	|------------------------------------------------
-	|--- Remove any comma from the zone longname ----
-	|------------------------------------------------
-
 	|------------------------------------------------------------
 	|Mob Array Information.
 	|------------------------------------------------------------
@@ -1866,28 +1884,6 @@ Sub ForceSpawnStepReset
 Sub DoLocPull
 /if (${Debugging}) /echo Sub DoLocPull Entry
 
-	/message ==================================================================
-	/message \agSetting up pathing to \ay[\arLocation Pull\ay] \agmobs. . . . .
-	|------------------------------------------------
-	|--- Remove any comma from the zone name ----
-	|------------------------------------------------
-	/message \ag - ORIGINAL ZONE NAME\ao=\am(\at${ValidZoneName}\am)\ax
-	/if (${ValidZoneName.Find[,]}) {
-		|/echo ${ValidZoneName} \arhas\ax a COMMA in it !
-		|/echo \arNeed to Modify Zone Name.\ax
-		|/echo CutPart 1=(${Zone.Name.Arg[1,,]})
-		|/echo CutPart 2=(${Zone.Name.Arg[2,,]})
-		/message  \ag - MODIFIED\ay=\am(\at${Zone.Name.Arg[1,,]} ${Zone.Name.Arg[2,,]}\am)\ax
-		/varset ValidZoneName ${Zone.Name.Arg[1,,]} ${Zone.Name.Arg[2,,]}
-	} else {
-		/message \at - ${ValidZoneName}\ax \agdoes NOT have\ax a COMMA in it !\ax
-		/message \at - No need to Modify Zone Name.\ax
-	}
-	/message \agFinal ZONE NAME\ao=\am(\at${ValidZoneName}\am)\ax
-	|------------------------------------------------
-	|--- Remove any comma from the zone longname ----
-	|------------------------------------------------
-	/message ==================================================================
 		
 	|------------------------------------------------------------
 	|Mob Array Information.
