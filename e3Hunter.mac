@@ -1,6 +1,9 @@
 |****************************************************************************************************************
 e3Hunter.mac - by Kroaking
-Last Updated: August 1st, 2026 - 06:00:00 AM
+Last Updated: August 2nd, 2026 - 02:01:00 PM
+
+v1.5.4
+- DisplayLootReport and IncrementLootTally subs added
 
 v1.5.3
 - Fixed name name resolution error for zones with commas in them.
@@ -51,8 +54,8 @@ Sub Main
 	/declare runcounter 		int 		outer	0
 	/declare notkillable		int 		outer	0
 	/declare Announce			bool		outer	FALSE
-	/declare version			string		outer	1.5.3
-	/declare LastUpdated		string		outer	"Last Updated: August 1st, 2026 - 06:00:00 AM"
+	/declare version			string		outer	1.5.4
+	/declare LastUpdated		string		outer	"Last Updated: August 2nd, 2026 - 02:01:00 PM"
 
 	/message ==================================================================
  	/call Declares
@@ -102,7 +105,7 @@ Sub Main
 	|---------------------------------------------------------------------------	
 	/message ==================================================================
 	/delay 3s
-
+	
 	|----------------
 	/call ResolveZone
 	|----------------
@@ -111,6 +114,13 @@ Sub Main
 	|----------------
 	/call CheckThings
 	|----------------
+
+	|---------------------------------------------------------------------------
+	/if (${ReportLoot}) {
+		/message \at***\at \agReportLoot: \ayis currently set to \at[\ar${ReportLoot}\at] \at***\at\ar	
+		/call DisplayLootReport
+	}
+	|---------------------------------------------------------------------------	
 
 	|--------------------------------------------
 	/if (${MouseLock}) {
@@ -245,6 +255,11 @@ Sub Declares
 	/declare CurrentDC				int		outer	0
 	/declare CurrentDCAC			int		outer	0
 	|----------------------------------------------------------
+
+	|** SESSION LOOT TALLY (for DisplayLootReport) **|
+	|----------------------------------------------------------
+	/declare LootTallyTotal		int		outer	0
+	|----------------------------------------------------------
 	|** SPECIFIC of E3Hunter.mac/SwarmPull declares **|
 
 	|** Declare colors their escape code for read-ability **|
@@ -288,7 +303,8 @@ Sub Declares
 	/call CheckINI ${IniFileName} General MouseLocValY int 550
 	/call CheckINI ${IniFileName} General NoDropGankItems string NOTHING
 	/call CheckINI ${IniFileName} General PBAOE_MobCount int 5
-	/call CheckINI ${IniFileName} General ReclaimDC bool FALSE
+	/call CheckINI ${IniFileName} General ReclaimDC bool FALSE	
+	/call CheckINI ${IniFileName} General ReportLoot bool TRUE	
 	/call CheckINI ${IniFileName} General UseClickBuffs bool FALSE
 	/call CheckINI ${IniFileName} General UseClickDamage bool FALSE
 	|------------------------------------------------------------
@@ -1339,7 +1355,7 @@ Sub DoSinglePull_Name(string Enemy)
 	  
 	    | -- MOB CAN BE LOWER THAN 100% (FROM DS) AND STILL VALID, SO WE USE RV_GetMobAtFullHealth TO IGNORE THIS CONDITION LIMITATION
         /if (${RV_GetMobAtFullHealth} && ${Int[${Target.PctHPs}]}<100) {
-          /message \ar Mob NOT a Full Health, (${Int[${Target.PctHPs}]}) picking another...\ax
+          /message \ar Mob NOT at Full Health, (${Int[${Target.PctHPs}]}) picking another...\ax
           /varset RV_InvalidTargetID ${Target.ID}
           /call ResetSub
           /goto :Acquire
@@ -1570,11 +1586,18 @@ Sub DoSinglePull_Name(string Enemy)
     /message ==================================================================
 	/message \ayDeclaring Loot Array...
     /declare RV_LootArray[${nValues}]   string outer
+	|--------------------------------------------------------------
+	|-- RV_LootTally is a parallel array to RV_LootArray, used to keep
+	|-- a running tally (this session) of how many of each RV_LootArray
+	|-- item we have looted. RV_LootTally[X] corresponds to RV_LootArray[X].
+	|--------------------------------------------------------------
+    /declare RV_LootTally[${nValues}]   int    outer
 	/message ==================================================================
 	/for nArray 1 to ${nValues}
 		/if (${FileName.Equal["${LootDataFileName}"]}) {
 			/varset TempLootArrayVal ${Ini[${FileName},${SectionName},${ArrayType}${nArray}]}
 			/if (!${TempLootArrayVal.Equal[NULL]}) /varset RV_LootArray[${nArray}] ${Ini[${FileName},${SectionName},${ArrayType}${nArray}]}
+			/if (!${TempLootArrayVal.Equal[NULL]}) /varset RV_LootTally[${nArray}] 0
 			/if (!${TempLootArrayVal.Equal[NULL]}) /message \atRV_LootArray[${nArray}]\ax \ay${Ini[${FileName},${SectionName},${ArrayType}${nArray}]}\ax
 		}	
 	/next nArray
@@ -2330,11 +2353,19 @@ Sub Zoning
     /squelch /target clear
 	|-------------------------
 	/if (${Me.XTarget} || ${Bool[${Spawn[npc radius 50].Aggressive}]}) /call DoClearTargets	
-    /if (${Bool[${Spawn[Corpse radius 100]}]}) /goto :CheckAgain
-  } else {
-    /message \ar+++ \ayNo corpse(s) found to loot.\ax
-  }
-
+    
+	|-------------------------
+	/if (${Bool[${Spawn[Corpse radius 100]}]}) {
+		/goto :CheckAgain
+	} else {
+		/message \ar+++ \ayNo corpse(s) found to loot.\ax
+	}
+	|-------------------------
+  
+	|-------------------------
+	/if (${ReportLoot}) /call DisplayLootReport
+	|-------------------------
+	
 	/if (${Debugging}) /echo Sub CheckForCorpses Exit
   /return
 | --------------------------------------------------------------------------------------------
@@ -2524,6 +2555,7 @@ Sub Zoning
 							/message \at+\ax \agKeeping a\ax \ay(\at${Cursor.Name}\ay)\ag, it is in our zone loot array!\ax						
 							/autoinventory 
 							/delay 5 !${Cursor.ID}
+							/call IncrementLootTally ${LootArraySub}
 						}							
 					/next LootArraySub
 					|------------------------------------------					
@@ -2584,6 +2616,29 @@ Sub Zoning
   |-------------------------------------------------------------------------------------
 	
   /if (${Debugging}) /echo Sub LootMob_DC_Hunter Exit
+  /return
+| --------------------------------------------------------------------------------------------
+
+| --------------------------------------------------------------------------------------------
+| SUB: IncrementLootTally(int LootArrayIndex)
+| -- Increments the running session tally for the RV_LootArray item we just
+| -- looted (RV_LootTally[LootArrayIndex]), and bumps the overall session total
+| -- (LootTallyTotal). Called from LootMob_DC_Hunter whenever a cursor item
+| -- matches an entry in RV_LootArray and is kept. Results are surfaced via
+| -- the DisplayLootReport sub.
+| --------------------------------------------------------------------------------------------
+  Sub IncrementLootTally(int LootArrayIndex)
+	/if (${Debugging}) /echo Sub IncrementLootTally Entry
+
+	|--------------------------------------------------------------
+	/if (${LootArrayIndex}>0 && ${LootArrayIndex}<=${RV_LootArray.Size}) {
+		/varset RV_LootTally[${LootArrayIndex}] ${Math.Calc[${RV_LootTally[${LootArrayIndex}]}+1]}
+		/varset LootTallyTotal ${Math.Calc[${LootTallyTotal}+1]}
+		/if (${Debugging}) /echo Tallied \ay${RV_LootArray[${LootArrayIndex}]}\ax -- Session Count: ${RV_LootTally[${LootArrayIndex}]}
+	}
+	|--------------------------------------------------------------
+
+	/if (${Debugging}) /echo Sub IncrementLootTally Exit
   /return
 | --------------------------------------------------------------------------------------------
 
@@ -3705,6 +3760,34 @@ Sub CheckDriverPetStatus
 	|-----------------------------
 
 	/if (${Debugging}) /echo Sub CheckDriverPetStatus Exit
+/return
+| --------------------------------------------------------------------------------------------
+
+
+| --------------------------------------------------------------------------------------------
+| SUB: DisplayLootReport
+| --------------------------------------------------------------------------------------------
+Sub DisplayLootReport
+	/if (${Debugging}) /echo Sub DisplayLootReport Entry
+	/declare LootReportSub			int		local	0
+
+	/message ==================================================================
+	/message \at***\at \agSESSION LOOT REPORT\at ***\ar
+	
+	|--------------------------------------------------------------
+	/if (!${Defined[RV_LootArray]} || !${RV_LootArray.Size}) {
+		/message \ar--- \ayNo RV_LootArray is currently loaded, nothing to report.
+	} else {
+		/for LootReportSub 1 to ${RV_LootArray.Size}
+			/if (${RV_LootArray[${LootReportSub}].Length}) /message \ag- \at${RV_LootArray[${LootReportSub}]}\ax: \ayLooted This Session\ao=\at[\ag${RV_LootTally[${LootReportSub}]}\at]\ay \aoOn Hand\ao=\at[\ag${FindItemCount[=${RV_LootArray[${LootReportSub}]}]}\at]\ax
+		/next LootReportSub
+	}
+	|--------------------------------------------------------------
+
+	/message \at***\at \ayTotal Items Looted This Session\ao: \at[\ag${LootTallyTotal}\at]\ar ***\ar
+	/message ==================================================================
+
+	/if (${Debugging}) /echo Sub DisplayLootReport Exit
 /return
 | --------------------------------------------------------------------------------------------
 
